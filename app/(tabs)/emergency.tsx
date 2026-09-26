@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { ScreenContainer } from "@/components/screen-container";
 import { useAllergy } from "@/lib/allergy-store";
+import { exportBackup, importJsonBackup } from "@/lib/backup";
 
 const palette = {
   navy: "#17324D",
@@ -24,7 +25,7 @@ const palette = {
 };
 
 export default function EmergencyScreen() {
-  const { records, profile, saveProfile } = useAllergy();
+  const { records, profile, saveProfile, replaceData } = useAllergy();
   const [editing, setEditing] = useState(false);
   const allergies = records.filter(
     (item) => item.kind !== "medicine-tolerated",
@@ -62,6 +63,44 @@ export default function EmergencyScreen() {
     saveProfile(draft);
     setEditing(false);
     Alert.alert("تم الحفظ", "تم تحديث بيانات بطاقة الطوارئ.");
+  };
+  const exportFile = async (format: "json" | "csv") => {
+    try {
+      await exportBackup(profile, records, format);
+    } catch (error) {
+      Alert.alert(
+        "تعذر التصدير",
+        error instanceof Error ? error.message : "حدث خطأ غير متوقع.",
+      );
+    }
+  };
+  const importFile = async () => {
+    try {
+      const backup = await importJsonBackup();
+      if (!backup) return;
+      Alert.alert(
+        "استبدال البيانات؟",
+        `سيتم استيراد ${backup.records.length} سجلًا واستبدال البيانات الحالية.`,
+        [
+          { text: "إلغاء", style: "cancel" },
+          {
+            text: "استيراد",
+            onPress: () => {
+              replaceData(backup.records, backup.profile);
+              Alert.alert(
+                "تم الاستيراد",
+                "تمت استعادة النسخة الاحتياطية بنجاح.",
+              );
+            },
+          },
+        ],
+      );
+    } catch (error) {
+      Alert.alert(
+        "تعذر الاستيراد",
+        error instanceof Error ? error.message : "الملف غير صالح أو تالف.",
+      );
+    }
   };
   return (
     <ScreenContainer
@@ -166,6 +205,29 @@ export default function EmergencyScreen() {
           >
             <Text style={styles.editText}>تعديل البيانات</Text>
           </Pressable>
+        </View>
+        <View style={styles.backupSection}>
+          <Text style={styles.backupTitle}>النسخ الاحتياطي</Text>
+          <Text style={styles.backupHint}>
+            احتفظ بنسخة خارجية من بياناتك أو استعدها من ملف JSON.
+          </Text>
+          <View style={styles.backupActions}>
+            <Pressable
+              onPress={() => exportFile("json")}
+              style={styles.backupButton}
+            >
+              <Text style={styles.backupButtonText}>تصدير JSON</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => exportFile("csv")}
+              style={styles.backupButton}
+            >
+              <Text style={styles.backupButtonText}>تصدير Excel</Text>
+            </Pressable>
+            <Pressable onPress={importFile} style={styles.backupButton}>
+              <Text style={styles.backupButtonText}>استيراد JSON</Text>
+            </Pressable>
+          </View>
         </View>
         <View style={styles.note}>
           <Text style={styles.noteText}>
@@ -363,6 +425,43 @@ const styles = StyleSheet.create({
     backgroundColor: palette.card,
   },
   editText: { color: palette.teal, fontSize: 14, fontWeight: "800" },
+  backupSection: {
+    backgroundColor: palette.card,
+    borderRadius: 15,
+    padding: 14,
+    marginTop: 12,
+    borderWidth: 1,
+    borderColor: palette.line,
+  },
+  backupTitle: {
+    color: palette.navy,
+    fontSize: 14,
+    fontWeight: "800",
+    textAlign: "right",
+  },
+  backupHint: {
+    color: palette.muted,
+    fontSize: 10,
+    textAlign: "right",
+    marginTop: 4,
+  },
+  backupActions: {
+    flexDirection: "row-reverse",
+    gap: 6,
+    marginTop: 10,
+  },
+  backupButton: {
+    flex: 1,
+    backgroundColor: "#EAF5F6",
+    borderRadius: 9,
+    paddingVertical: 10,
+    alignItems: "center",
+  },
+  backupButtonText: {
+    color: palette.teal,
+    fontSize: 10,
+    fontWeight: "800",
+  },
   note: {
     backgroundColor: "#EAF5F6",
     borderRadius: 13,

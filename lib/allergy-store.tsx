@@ -39,6 +39,7 @@ type StoreValue = {
   addRecord: (record: Omit<AllergyRecord, "id" | "date">) => void;
   deleteRecord: (id: string) => void;
   saveProfile: (profile: Profile) => void;
+  replaceData: (records: AllergyRecord[], profile: Profile) => void;
 };
 
 const STORAGE_KEY = "allergy-guard-data-v1";
@@ -96,6 +97,10 @@ export function AllergyProvider({ children }: { children: React.ReactNode }) {
       deleteRecord: (id) =>
         setRecords((current) => current.filter((record) => record.id !== id)),
       saveProfile: (nextProfile) => setProfile(nextProfile),
+      replaceData: (nextRecords, nextProfile) => {
+        setRecords(nextRecords);
+        setProfile({ ...emptyProfile, ...nextProfile });
+      },
     }),
     [records, profile, hydrated],
   );
