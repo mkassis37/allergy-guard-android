@@ -1,6 +1,7 @@
 import { useState } from "react";
 import {
   Alert,
+  Modal,
   Pressable,
   ScrollView,
   Share,
@@ -11,7 +12,12 @@ import {
 } from "react-native";
 import { ScreenContainer } from "@/components/screen-container";
 import { useAllergy } from "@/lib/allergy-store";
-import { exportBackup, importJsonBackup } from "@/lib/backup";
+import {
+  exportBackup,
+  exportEncryptedBackup,
+  importEncryptedBackup,
+  importJsonBackup,
+} from "@/lib/backup";
 
 const palette = {
   navy: "#17324D",
@@ -27,6 +33,10 @@ const palette = {
 export default function EmergencyScreen() {
   const { records, profile, saveProfile, replaceData } = useAllergy();
   const [editing, setEditing] = useState(false);
+  const [passwordMode, setPasswordMode] = useState<"export" | "import" | null>(
+    null,
+  );
+  const [backupPassword, setBackupPassword] = useState("");
   const allergies = records.filter(
     (item) => item.kind !== "medicine-tolerated",
   );
@@ -99,6 +109,41 @@ export default function EmergencyScreen() {
       Alert.alert(
         "تعذر الاستيراد",
         error instanceof Error ? error.message : "الملف غير صالح أو تالف.",
+      );
+    }
+  };
+  const submitEncryptedBackup = async () => {
+    try {
+      if (passwordMode === "export") {
+        await exportEncryptedBackup(profile, records, backupPassword);
+        Alert.alert("تم التصدير", "تم إنشاء ملف نسخة احتياطية مشفر.");
+      } else if (passwordMode === "import") {
+        const backup = await importEncryptedBackup(backupPassword);
+        if (!backup) return;
+        Alert.alert(
+          "استبدال البيانات؟",
+          `سيتم استيراد ${backup.records.length} سجلًا واستبدال البيانات الحالية.`,
+          [
+            { text: "إلغاء", style: "cancel" },
+            {
+              text: "استيراد",
+              onPress: () => {
+                replaceData(backup.records, backup.profile);
+                Alert.alert(
+                  "تم الاستيراد",
+                  "تمت استعادة النسخة المشفرة بنجاح.",
+                );
+              },
+            },
+          ],
+        );
+      }
+      setPasswordMode(null);
+      setBackupPassword("");
+    } catch (error) {
+      Alert.alert(
+        passwordMode === "export" ? "تعذر التشفير" : "تعذر فك التشفير",
+        error instanceof Error ? error.message : "تحقق من كلمة المرور والملف.",
       );
     }
   };
@@ -209,14 +254,14 @@ export default function EmergencyScreen() {
         <View style={styles.backupSection}>
           <Text style={styles.backupTitle}>النسخ الاحتياطي</Text>
           <Text style={styles.backupHint}>
-            احتفظ بنسخة خارجية من بياناتك أو استعدها من ملف JSON.
+            استخدم النسخة المشفرة للحماية، أو CSV لفتح البيانات في Excel.
           </Text>
           <View style={styles.backupActions}>
             <Pressable
-              onPress={() => exportFile("json")}
+              onPress={() => setPasswordMode("export")}
               style={styles.backupButton}
             >
-              <Text style={styles.backupButtonText}>تصدير JSON</Text>
+              <Text style={styles.backupButtonText}>تصدير مشفر</Text>
             </Pressable>
             <Pressable
               onPress={() => exportFile("csv")}
@@ -224,8 +269,11 @@ export default function EmergencyScreen() {
             >
               <Text style={styles.backupButtonText}>تصدير Excel</Text>
             </Pressable>
-            <Pressable onPress={importFile} style={styles.backupButton}>
-              <Text style={styles.backupButtonText}>استيراد JSON</Text>
+            <Pressable
+              onPress={() => setPasswordMode("import")}
+              style={styles.backupButton}
+            >
+              <Text style={styles.backupButtonText}>استيراد مشفر</Text>
             </Pressable>
           </View>
         </View>
@@ -278,6 +326,53 @@ export default function EmergencyScreen() {
             </Pressable>
           </View>
         )}
+        <Modal
+          visible={passwordMode !== null}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setPasswordMode(null)}
+        >
+          <View style={styles.modalBackdrop}>
+            <View style={styles.passwordModal}>
+              <Text style={styles.formTitle}>
+                {passwordMode === "export"
+                  ? "حماية النسخة"
+                  : "فتح النسخة المشفرة"}
+              </Text>
+              <Text style={styles.passwordHint}>
+                {passwordMode === "export"
+                  ? "أنشئ كلمة مرور من 8 أحرف أو أكثر. ستحتاجها عند الاستعادة."
+                  : "أدخل كلمة المرور التي استخدمتها عند التصدير."}
+              </Text>
+              <TextInput
+                value={backupPassword}
+                onChangeText={setBackupPassword}
+                placeholder="كلمة المرور"
+                placeholderTextColor="#9BAAB3"
+                secureTextEntry
+                autoCapitalize="none"
+                style={styles.input}
+                textAlign="right"
+              />
+              <View style={styles.modalActions}>
+                <Pressable
+                  onPress={() => {
+                    setPasswordMode(null);
+                    setBackupPassword("");
+                  }}
+                  style={styles.cancelButton}
+                >
+                  <Text style={styles.cancelText}>إلغاء</Text>
+                </Pressable>
+                <Pressable onPress={submitEncryptedBackup} style={styles.save}>
+                  <Text style={styles.saveText}>
+                    {passwordMode === "export" ? "تشفير ومشاركة" : "فك التشفير"}
+                  </Text>
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        </Modal>
       </ScrollView>
     </ScreenContainer>
   );
@@ -507,4 +602,34 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   saveText: { color: "white", fontSize: 14, fontWeight: "800" },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(23,50,77,0.45)",
+    justifyContent: "center",
+    padding: 20,
+  },
+  passwordModal: {
+    backgroundColor: palette.card,
+    borderRadius: 18,
+    padding: 18,
+    borderWidth: 1,
+    borderColor: palette.line,
+  },
+  passwordHint: {
+    color: palette.muted,
+    fontSize: 11,
+    lineHeight: 17,
+    textAlign: "right",
+    marginBottom: 12,
+  },
+  modalActions: { flexDirection: "row-reverse", gap: 8, alignItems: "center" },
+  cancelButton: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: palette.line,
+    borderRadius: 11,
+    paddingVertical: 13,
+    alignItems: "center",
+  },
+  cancelText: { color: palette.muted, fontSize: 13, fontWeight: "800" },
 });
