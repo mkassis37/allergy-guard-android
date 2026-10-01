@@ -3,6 +3,7 @@ import type { ExpoConfig } from "expo/config";
 const config: ExpoConfig = {
   name: "حارس الحساسية",
   slug: "allergy-guard-android",
+  owner: "malak-new",
   version: "0.1.0",
   orientation: "portrait",
   icon: "./assets/images/icon.png",
