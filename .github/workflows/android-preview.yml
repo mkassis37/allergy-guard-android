@@ -37,8 +37,6 @@ jobs:
         with:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
-      - name: Initialize EAS project
-        run: eas init --account malak-new --non-interactive
       - name: Build preview APK
         run: |
           eas build --platform android --profile preview --non-interactive --wait

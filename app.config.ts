@@ -5,6 +5,11 @@ const config: ExpoConfig = {
   slug: "allergy-guard-android",
   owner: "malak-new",
   version: "0.1.0",
+  extra: {
+    eas: {
+      projectId: "f76f024e-f713-4353-a694-f56589537c1d",
+    },
+  },
   orientation: "portrait",
   icon: "./assets/images/icon.png",
   scheme: "allergyguard",
