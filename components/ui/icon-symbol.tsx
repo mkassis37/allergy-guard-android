@@ -20,6 +20,7 @@ const MAPPING = {
   "house.fill": "home",
   "list.bullet": "list",
   "cross.case.fill": "medical-services",
+  "gearshape.fill": "settings",
   "paperplane.fill": "send",
   "chevron.left.forwardslash.chevron.right": "code",
   "chevron.right": "chevron-right",
