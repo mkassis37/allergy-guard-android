@@ -4,7 +4,7 @@ const config: ExpoConfig = {
   name: "حارس الحساسية",
   slug: "allergy-guard-android",
   owner: "malak-new",
-  version: "0.2.4",
+  version: "0.2.5",
   extra: {
     eas: {
       projectId: "f76f024e-f713-4353-a694-f56589537c1d",

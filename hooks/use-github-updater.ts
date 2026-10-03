@@ -13,7 +13,8 @@ function getCurrentVersion() {
   return Constants.expoConfig?.version ?? "0.0.0";
 }
 
-export function useGithubUpdater() {
+export function useGithubUpdater(options: { autoCheck?: boolean } = {}) {
+  const autoCheck = options.autoCheck ?? true;
   const checking = useRef(false);
   const mounted = useRef(true);
 
@@ -68,6 +69,11 @@ export function useGithubUpdater() {
 
   useEffect(() => {
     mounted.current = true;
+    if (!autoCheck) {
+      return () => {
+        mounted.current = false;
+      };
+    }
     void checkNow();
     const onStateChange = (state: AppStateStatus) => {
       if (state === "active") void checkNow();
@@ -77,7 +83,7 @@ export function useGithubUpdater() {
       mounted.current = false;
       subscription.remove();
     };
-  }, [checkNow]);
+  }, [autoCheck, checkNow]);
 
   return { checkNow };
 }

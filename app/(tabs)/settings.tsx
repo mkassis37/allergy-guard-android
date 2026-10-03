@@ -19,7 +19,7 @@ const palette = {
 };
 
 export default function SettingsScreen() {
-  const { checkNow } = useGithubUpdater();
+  const { checkNow } = useGithubUpdater({ autoCheck: false });
   const [checking, setChecking] = useState(false);
   const version = Constants.expoConfig?.version ?? "غير معروف";
 
