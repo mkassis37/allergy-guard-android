@@ -4,7 +4,7 @@ const config: ExpoConfig = {
   name: "حارس الحساسية",
   slug: "allergy-guard-android",
   owner: "malak-new",
-  version: "0.2.5",
+  version: "0.3.0",
   extra: {
     eas: {
       projectId: "f76f024e-f713-4353-a694-f56589537c1d",
@@ -14,7 +14,7 @@ const config: ExpoConfig = {
   icon: "./assets/images/icon.png",
   scheme: "allergyguard",
   userInterfaceStyle: "light",
-  newArchEnabled: false,
+  newArchEnabled: true,
   android: {
     package: "com.mkassis37.allergyguard",
     adaptiveIcon: {
