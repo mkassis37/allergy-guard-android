@@ -6,14 +6,17 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { ThemeProvider } from "@/lib/theme-provider";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { AllergyProvider } from "@/lib/allergy-store";
-import { useGithubUpdater } from "@/hooks/use-github-updater";
 
-I18nManager.allowRTL(true);
-I18nManager.forceRTL(true);
+try {
+  I18nManager.allowRTL(true);
+} catch {}
+
+export function ErrorBoundary({ error }: { error: Error }) {
+  return null;
+}
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
-  useGithubUpdater();
   return (
     <SafeAreaProvider>
       <ThemeProvider>

@@ -4,7 +4,7 @@ const config: ExpoConfig = {
   name: "حارس الحساسية",
   slug: "allergy-guard-android",
   owner: "malak-new",
-  version: "0.2.5",
+  version: "0.2.8",
   extra: {
     eas: {
       projectId: "f76f024e-f713-4353-a694-f56589537c1d",
@@ -14,7 +14,7 @@ const config: ExpoConfig = {
   icon: "./assets/images/icon.png",
   scheme: "allergyguard",
   userInterfaceStyle: "light",
-  newArchEnabled: true,
+  newArchEnabled: false,
   android: {
     package: "com.mkassis37.allergyguard",
     adaptiveIcon: {
@@ -23,7 +23,6 @@ const config: ExpoConfig = {
       backgroundImage: "./assets/images/android-icon-background.png",
       monochromeImage: "./assets/images/android-icon-monochrome.png",
     },
-    edgeToEdgeEnabled: true,
     predictiveBackGestureEnabled: false,
   },
   ios: { supportsTablet: true, bundleIdentifier: "com.mkassis37.allergyguard" },
@@ -53,7 +52,7 @@ const config: ExpoConfig = {
       },
     ],
   ],
-  experiments: { typedRoutes: true, reactCompiler: true },
+  experiments: { typedRoutes: true, reactCompiler: false },
 };
 
 export default config;

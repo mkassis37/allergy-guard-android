@@ -14,7 +14,7 @@ function getCurrentVersion() {
 }
 
 export function useGithubUpdater(options: { autoCheck?: boolean } = {}) {
-  const autoCheck = options.autoCheck ?? true;
+  const autoCheck = options.autoCheck ?? false;
   const checking = useRef(false);
   const mounted = useRef(true);
 
@@ -74,9 +74,9 @@ export function useGithubUpdater(options: { autoCheck?: boolean } = {}) {
         mounted.current = false;
       };
     }
-    void checkNow();
+    void checkNow().catch(() => undefined);
     const onStateChange = (state: AppStateStatus) => {
-      if (state === "active") void checkNow();
+      if (state === "active") void checkNow().catch(() => undefined);
     };
     const subscription = AppState.addEventListener("change", onStateChange);
     return () => {
