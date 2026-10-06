@@ -43,6 +43,21 @@ describe("local backup export and import", () => {
     expect(csv).toContain("المادة الفعالة");
   });
 
+  it("accepts regular medication records in backups", () => {
+    const medication = {
+      id: "2",
+      kind: "medicine" as const,
+      name: "دواء منتظم",
+      activeIngredient: "مادة",
+      purpose: "علاج منتظم",
+      date: "2026-01-02T00:00:00.000Z",
+    };
+    const payload = makeBackupPayload(profile, [...records, medication]);
+    const restored = validateBackup(JSON.parse(JSON.stringify(payload)));
+    expect(restored.records[1].kind).toBe("medicine");
+    expect(csvRows(payload)).toContain("دواء / علاج");
+  });
+
   it("encrypts and imports a backup with the correct password", async () => {
     const payload = makeBackupPayload(profile, records);
     const encrypted = await encryptBackupPayload(payload, "كلمة-مرور-قوية");
@@ -73,5 +88,34 @@ describe("local backup export and import", () => {
     await expect(
       encryptBackupPayload(makeBackupPayload(profile, records), "1234567"),
     ).rejects.toThrow("8 أحرف");
+  });
+
+  it("accepts other allergy records and medication dose fields", () => {
+    const expanded = [
+      ...records,
+      {
+        id: "3",
+        kind: "other-allergy" as const,
+        name: "اللاتكس",
+        symptoms: "طفح",
+        severity: "متوسطة" as const,
+        date: "2026-01-03T00:00:00.000Z",
+      },
+      {
+        id: "4",
+        kind: "medicine" as const,
+        name: "Metformin",
+        dosage: "500 mg",
+        frequency: "مرتان يوميًا",
+        date: "2026-01-04T00:00:00.000Z",
+      },
+    ];
+    const payload = makeBackupPayload(profile, expanded);
+    const restored = validateBackup(JSON.parse(JSON.stringify(payload)));
+    expect(restored.records[1].kind).toBe("other-allergy");
+    expect(restored.records[2].dosage).toBe("500 mg");
+    const csv = csvRows(payload);
+    expect(csv).toContain("حساسية أخرى");
+    expect(csv).toContain("مرتان يوميًا");
   });
 });

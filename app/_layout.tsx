@@ -1,12 +1,16 @@
 import "../global.css";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { I18nManager } from "react-native";
+import {
+  I18nManager,
+  View,
+  Text,
+  useColorScheme as useSystemColorScheme,
+} from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { View, Text } from "react-native";
 import { ThemeProvider } from "@/lib/theme-provider";
-import { useColorScheme } from "@/hooks/use-color-scheme";
 import { AllergyProvider } from "@/lib/allergy-store";
+import { useGithubUpdater } from "@/hooks/use-github-updater";
 
 try {
   I18nManager.allowRTL(true);
@@ -32,12 +36,20 @@ export function ErrorBoundary({ error }: { error: Error }) {
   );
 }
 
+function UpdateWatcher() {
+  useGithubUpdater({ autoCheck: true });
+  return null;
+}
+
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
+  const systemColorScheme = useSystemColorScheme();
+  const colorScheme = systemColorScheme ?? "light";
+
   return (
     <SafeAreaProvider>
       <ThemeProvider>
         <AllergyProvider>
+          <UpdateWatcher />
           <Stack screenOptions={{ headerShown: false }} />
           <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
         </AllergyProvider>

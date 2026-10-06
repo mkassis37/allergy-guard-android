@@ -5,10 +5,21 @@ import { validateBackup, type BackupPayload } from "./backup-format";
 
 const ENVELOPE_APP = "allergy-guard-encrypted-backup" as const;
 const ENVELOPE_VERSION = 1 as const;
-const ITERATIONS = 210_000;
+const CURRENT_ITERATIONS = 20_000;
+const MIN_SUPPORTED_ITERATIONS = 10_000;
+const MAX_SUPPORTED_ITERATIONS = 500_000;
 const SALT_BYTES = 16;
 const NONCE_BYTES = 24;
 const KEY_BYTES = 32;
+
+async function secureRandomBytes(length: number): Promise<Uint8Array> {
+  const webCrypto = (globalThis as { crypto?: Crypto }).crypto;
+  if (webCrypto?.getRandomValues) {
+    return webCrypto.getRandomValues(new Uint8Array(length));
+  }
+  const expoCrypto = await import("expo-crypto");
+  return expoCrypto.getRandomBytesAsync(length);
+}
 
 type EncryptedBackupEnvelope = {
   app: typeof ENVELOPE_APP;
@@ -42,11 +53,15 @@ const assertPassword = (password: string) => {
   }
 };
 
-const deriveKey = async (password: string, salt: Uint8Array) =>
+const deriveKey = async (
+  password: string,
+  salt: Uint8Array,
+  iterations: number,
+) =>
   pbkdf2Async(sha256, password, salt, {
-    c: ITERATIONS,
+    c: iterations,
     dkLen: KEY_BYTES,
-    asyncTick: 8,
+    asyncTick: 24,
   });
 
 export function isEncryptedBackup(
@@ -70,9 +85,11 @@ export async function encryptBackupPayload(
   password: string,
 ): Promise<string> {
   assertPassword(password);
-  const salt = nacl.randomBytes(SALT_BYTES);
-  const nonce = nacl.randomBytes(NONCE_BYTES);
-  const key = await deriveKey(password, salt);
+  const [salt, nonce] = await Promise.all([
+    secureRandomBytes(SALT_BYTES),
+    secureRandomBytes(NONCE_BYTES),
+  ]);
+  const key = await deriveKey(password, salt, CURRENT_ITERATIONS);
   const plaintext = new TextEncoder().encode(JSON.stringify(payload));
   const ciphertext = nacl.secretbox(plaintext, nonce, key);
   const envelope: EncryptedBackupEnvelope = {
@@ -80,7 +97,7 @@ export async function encryptBackupPayload(
     schemaVersion: ENVELOPE_VERSION,
     algorithm: "XSalsa20-Poly1305",
     kdf: "PBKDF2-SHA256",
-    iterations: ITERATIONS,
+    iterations: CURRENT_ITERATIONS,
     salt: toBase64(salt),
     nonce: toBase64(nonce),
     ciphertext: toBase64(ciphertext),
@@ -102,7 +119,11 @@ export async function decryptBackupPayload(
   if (!isEncryptedBackup(parsed)) {
     throw new Error("هذا الملف ليس نسخة مشفرة من حارس الحساسية.");
   }
-  if (parsed.iterations !== ITERATIONS) {
+  if (
+    !Number.isInteger(parsed.iterations) ||
+    parsed.iterations < MIN_SUPPORTED_ITERATIONS ||
+    parsed.iterations > MAX_SUPPORTED_ITERATIONS
+  ) {
     throw new Error("إصدار تشفير النسخة غير مدعوم.");
   }
   try {
@@ -112,7 +133,7 @@ export async function decryptBackupPayload(
     if (salt.length !== SALT_BYTES || nonce.length !== NONCE_BYTES) {
       throw new Error("invalid envelope dimensions");
     }
-    const key = await deriveKey(password, salt);
+    const key = await deriveKey(password, salt, parsed.iterations);
     const plaintext = nacl.secretbox.open(ciphertext, nonce, key);
     if (!plaintext) throw new Error("authentication failed");
     const decoded = new TextDecoder().decode(plaintext);
@@ -125,5 +146,5 @@ export async function decryptBackupPayload(
 export const encryptionInfo = {
   algorithm: "XSalsa20-Poly1305",
   kdf: "PBKDF2-SHA256",
-  iterations: ITERATIONS,
+  iterations: CURRENT_ITERATIONS,
 };

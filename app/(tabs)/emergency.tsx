@@ -8,9 +8,12 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  TouchableOpacity,
   View,
 } from "react-native";
 import { ScreenContainer } from "@/components/screen-container";
+import { FormActionBar } from "@/components/form-action-bar";
+import { PersistentSaveBanner } from "@/components/persistent-save-banner";
 import { useAllergy } from "@/lib/allergy-store";
 import {
   exportBackup,
@@ -38,8 +41,12 @@ export default function EmergencyScreen() {
   );
   const [backupPassword, setBackupPassword] = useState("");
   const allergies = records.filter(
-    (item) => item.kind !== "medicine-tolerated",
+    (item) =>
+      item.kind === "medicine-allergy" ||
+      item.kind === "food-allergy" ||
+      item.kind === "other-allergy",
   );
+  const medicines = records.filter((item) => item.kind === "medicine");
   const tolerated = records.filter(
     (item) => item.kind === "medicine-tolerated",
   );
@@ -53,7 +60,7 @@ export default function EmergencyScreen() {
           .filter((r) => r.kind === "medicine-allergy")
           .map(
             (r) =>
-              `${r.name}${r.activeIngredient ? ` (${r.activeIngredient})` : ""}`,
+              `${r.name}${r.activeIngredient ? ` (${r.activeIngredient})` : ""}${r.dosage ? ` — ${r.dosage}` : ""}${r.frequency ? `، ${r.frequency}` : ""}`,
           )
           .join("، ") || "لا يوجد"
       }`,
@@ -63,7 +70,14 @@ export default function EmergencyScreen() {
           .map((r) => r.name)
           .join("، ") || "لا يوجد"
       }`,
-      `أدوية تم تحملها: ${tolerated.map((r) => `${r.name}${r.activeIngredient ? ` (${r.activeIngredient})` : ""}`).join("، ") || "لا يوجد"}`,
+      `حساسيات أخرى: ${
+        allergies
+          .filter((r) => r.kind === "other-allergy")
+          .map((r) => `${r.name}${r.severity ? ` (${r.severity})` : ""}`)
+          .join("، ") || "لا يوجد"
+      }`,
+      `الأدوية / العلاجات المسجلة: ${medicines.map((r) => `${r.name}${r.activeIngredient ? ` (${r.activeIngredient})` : ""}${r.dosage ? ` — ${r.dosage}` : ""}${r.frequency ? `، ${r.frequency}` : ""}`).join("، ") || "لا يوجد"}`,
+      `أدوية تم تحملها: ${tolerated.map((r) => `${r.name}${r.activeIngredient ? ` (${r.activeIngredient})` : ""}${r.dosage ? ` — ${r.dosage}` : ""}${r.frequency ? `، ${r.frequency}` : ""}`).join("، ") || "لا يوجد"}`,
       `جهة الطوارئ: ${profile.emergencyContact || "غير مسجل"}`,
       "هذه المعلومات سجل شخصي وليست تشخيصًا طبيًا.",
     ];
@@ -224,12 +238,28 @@ export default function EmergencyScreen() {
               .map((r) => r.name)
               .join("، ") || "لا توجد سجلات"}
           </Text>
+          <Text style={styles.fieldHeading}>حساسيات أخرى</Text>
+          <Text style={styles.foodText}>
+            {allergies
+              .filter((r) => r.kind === "other-allergy")
+              .map((r) => `${r.name}${r.severity ? ` (${r.severity})` : ""}`)
+              .join("، ") || "لا توجد سجلات"}
+          </Text>
+          <Text style={styles.fieldHeading}>الأدوية / العلاجات المسجلة</Text>
+          <Text style={styles.foodText}>
+            {medicines
+              .map(
+                (r) =>
+                  `${r.name}${r.activeIngredient ? ` (${r.activeIngredient})` : ""}${r.dosage ? ` — ${r.dosage}` : ""}${r.frequency ? `، ${r.frequency}` : ""}`,
+              )
+              .join("، ") || "لا توجد سجلات"}
+          </Text>
           <Text style={styles.fieldHeading}>أدوية تم تحملها دون حساسية</Text>
           <Text style={styles.foodText}>
             {tolerated
               .map(
                 (r) =>
-                  `${r.name}${r.activeIngredient ? ` (${r.activeIngredient})` : ""}`,
+                  `${r.name}${r.activeIngredient ? ` (${r.activeIngredient})` : ""}${r.dosage ? ` — ${r.dosage}` : ""}${r.frequency ? `، ${r.frequency}` : ""}`,
               )
               .join("، ") || "لا توجد سجلات"}
           </Text>
@@ -285,7 +315,20 @@ export default function EmergencyScreen() {
         </View>
         {editing && (
           <View style={styles.form}>
-            <Text style={styles.formTitle}>تعديل بيانات البطاقة</Text>
+            <View style={styles.formHeaderRow}>
+              <Text style={styles.formTitle}>تعديل بيانات البطاقة</Text>
+              <TouchableOpacity
+                onPress={save}
+                activeOpacity={0.72}
+                style={styles.formHeaderSave}
+                accessibilityRole="button"
+                accessibilityLabel="حفظ التعديلات"
+                accessibilityHint="اضغط لحفظ بيانات بطاقة الطوارئ"
+              >
+                <Text style={styles.formHeaderSaveText}>حفظ</Text>
+              </TouchableOpacity>
+            </View>
+            <PersistentSaveBanner label="حفظ التعديلات" onPress={save} />
             <TextInput
               value={draft.fullName}
               onChangeText={(value) => setDraft({ ...draft, fullName: value })}
@@ -321,9 +364,12 @@ export default function EmergencyScreen() {
               style={styles.input}
               textAlign="right"
             />
-            <Pressable onPress={save} style={styles.save}>
-              <Text style={styles.saveText}>حفظ البيانات</Text>
-            </Pressable>
+            <FormActionBar
+              label="حفظ التعديلات"
+              onPress={save}
+              topBorder={false}
+              bottomPadding={4}
+            />
           </View>
         )}
         <Modal
@@ -594,6 +640,24 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginBottom: 8,
   },
+  formHeaderRow: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 8,
+  },
+  formHeaderSave: {
+    minWidth: 88,
+    minHeight: 46,
+    borderRadius: 13,
+    backgroundColor: "#DDF7F4",
+    borderWidth: 3,
+    borderColor: "#087E8B",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 14,
+  },
+  formHeaderSaveText: { color: "#075D69", fontSize: 18, fontWeight: "900" },
   save: {
     backgroundColor: palette.navy,
     borderRadius: 11,

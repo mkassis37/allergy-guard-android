@@ -24,22 +24,40 @@ export function csvRows(payload: BackupPayload) {
     "النوع",
     "الاسم",
     "المادة الفعالة",
-    "الاستخدام",
+    "الاستخدام / الوصف",
+    "الجرعة",
+    "التكرار",
     "الأعراض",
     "الشدة",
-    "التاريخ",
+    "الملاحظات",
+    "تاريخ الحدث",
+    "تاريخ الإضافة",
   ];
   const rows = payload.records.map((record) => [
     record.kind === "medicine-allergy"
       ? "دواء مسبب للحساسية"
       : record.kind === "food-allergy"
         ? "طعام أو مكوّن"
-        : "دواء متحمّل",
+        : record.kind === "other-allergy"
+          ? "حساسية أخرى"
+          : record.kind === "medicine"
+            ? "دواء / علاج"
+            : record.kind === "medicine-tolerated"
+              ? "دواء متحمّل"
+              : record.kind === "chronic-condition"
+                ? "مرض مزمن"
+                : record.kind === "surgery"
+                  ? "عملية سابقة"
+                  : "ملاحظة طبية",
     record.name,
     record.activeIngredient,
     record.purpose,
+    record.dosage,
+    record.frequency,
     record.symptoms,
     record.severity,
+    record.notes,
+    record.eventDate,
     record.date,
   ]);
   return (

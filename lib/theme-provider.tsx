@@ -28,16 +28,30 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     useState<ColorScheme>(systemScheme);
 
   const applyScheme = useCallback((scheme: ColorScheme) => {
-    nativewindColorScheme.set(scheme);
-    Appearance.setColorScheme?.(scheme);
+    try {
+      nativewindColorScheme.set(scheme);
+    } catch (e) {
+      console.warn("Failed to set nativewind color scheme:", e);
+    }
+
+    try {
+      Appearance.setColorScheme?.(scheme);
+    } catch (e) {
+      console.warn("Failed to set appearance color scheme:", e);
+    }
+
     if (typeof document !== "undefined") {
-      const root = document.documentElement;
-      root.dataset.theme = scheme;
-      root.classList.toggle("dark", scheme === "dark");
-      const palette = SchemeColors[scheme];
-      Object.entries(palette).forEach(([token, value]) => {
-        root.style.setProperty(`--color-${token}`, value);
-      });
+      try {
+        const root = document.documentElement;
+        root.dataset.theme = scheme;
+        root.classList.toggle("dark", scheme === "dark");
+        const palette = SchemeColors[scheme];
+        Object.entries(palette).forEach(([token, value]) => {
+          root.style.setProperty(`--color-${token}`, value);
+        });
+      } catch (e) {
+        console.warn("Failed to apply web theme:", e);
+      }
     }
   }, []);
 
@@ -53,9 +67,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     applyScheme(colorScheme);
   }, [applyScheme, colorScheme]);
 
-  const themeVariables = useMemo(
-    () =>
-      vars({
+  const themeVariables = useMemo(() => {
+    try {
+      return vars({
         "color-primary": SchemeColors[colorScheme].primary,
         "color-background": SchemeColors[colorScheme].background,
         "color-surface": SchemeColors[colorScheme].surface,
@@ -65,9 +79,12 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         "color-success": SchemeColors[colorScheme].success,
         "color-warning": SchemeColors[colorScheme].warning,
         "color-error": SchemeColors[colorScheme].error,
-      }),
-    [colorScheme],
-  );
+      });
+    } catch (e) {
+      console.warn("Failed to build theme variables:", e);
+      return {};
+    }
+  }, [colorScheme]);
 
   const value = useMemo(
     () => ({
