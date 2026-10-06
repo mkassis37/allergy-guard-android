@@ -6,6 +6,7 @@ import {
 } from "../lib/backup-crypto";
 import { csvRows, makeBackupPayload } from "../lib/backup-serialization";
 import { validateBackup } from "../lib/backup-format";
+import { validateDeviceBackup } from "../lib/device-backup-format";
 
 const profile = {
   fullName: "أحمد",
@@ -29,6 +30,19 @@ const records = [
 ];
 
 describe("local backup export and import", () => {
+  it("validates a shareable local device backup without credentials", () => {
+    const result = validateDeviceBackup({
+      app: "allergy-guard-local-backup",
+      schemaVersion: 1,
+      exportedAt: "2026-10-06T00:00:00.000Z",
+      data: { schemaVersion: 2, patients: [], activePatientId: null },
+    });
+    expect(result.data.patients).toHaveLength(0);
+    expect(() => validateDeviceBackup({ app: "unknown" })).toThrow(
+      "ليس نسخة حارس الحساسية",
+    );
+  });
+
   it("creates a valid JSON payload for local export", () => {
     const payload = makeBackupPayload(profile, records);
     const restored = validateBackup(JSON.parse(JSON.stringify(payload)));

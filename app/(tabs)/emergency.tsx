@@ -1,7 +1,6 @@
 import { useState } from "react";
 import {
   Alert,
-  Modal,
   Pressable,
   ScrollView,
   Share,
@@ -15,12 +14,7 @@ import { ScreenContainer } from "@/components/screen-container";
 import { FormActionBar } from "@/components/form-action-bar";
 import { PersistentSaveBanner } from "@/components/persistent-save-banner";
 import { useAllergy } from "@/lib/allergy-store";
-import {
-  exportBackup,
-  exportEncryptedBackup,
-  importEncryptedBackup,
-  importJsonBackup,
-} from "@/lib/backup";
+import { exportBackup, importJsonBackup } from "@/lib/backup";
 
 const palette = {
   navy: "#17324D",
@@ -36,10 +30,6 @@ const palette = {
 export default function EmergencyScreen() {
   const { records, profile, saveProfile, replaceData } = useAllergy();
   const [editing, setEditing] = useState(false);
-  const [passwordMode, setPasswordMode] = useState<"export" | "import" | null>(
-    null,
-  );
-  const [backupPassword, setBackupPassword] = useState("");
   const allergies = records.filter(
     (item) =>
       item.kind === "medicine-allergy" ||
@@ -123,41 +113,6 @@ export default function EmergencyScreen() {
       Alert.alert(
         "تعذر الاستيراد",
         error instanceof Error ? error.message : "الملف غير صالح أو تالف.",
-      );
-    }
-  };
-  const submitEncryptedBackup = async () => {
-    try {
-      if (passwordMode === "export") {
-        await exportEncryptedBackup(profile, records, backupPassword);
-        Alert.alert("تم التصدير", "تم إنشاء ملف نسخة احتياطية مشفر.");
-      } else if (passwordMode === "import") {
-        const backup = await importEncryptedBackup(backupPassword);
-        if (!backup) return;
-        Alert.alert(
-          "استبدال البيانات؟",
-          `سيتم استيراد ${backup.records.length} سجلًا واستبدال البيانات الحالية.`,
-          [
-            { text: "إلغاء", style: "cancel" },
-            {
-              text: "استيراد",
-              onPress: () => {
-                replaceData(backup.records, backup.profile);
-                Alert.alert(
-                  "تم الاستيراد",
-                  "تمت استعادة النسخة المشفرة بنجاح.",
-                );
-              },
-            },
-          ],
-        );
-      }
-      setPasswordMode(null);
-      setBackupPassword("");
-    } catch (error) {
-      Alert.alert(
-        passwordMode === "export" ? "تعذر التشفير" : "تعذر فك التشفير",
-        error instanceof Error ? error.message : "تحقق من كلمة المرور والملف.",
       );
     }
   };
@@ -284,14 +239,14 @@ export default function EmergencyScreen() {
         <View style={styles.backupSection}>
           <Text style={styles.backupTitle}>النسخ الاحتياطي</Text>
           <Text style={styles.backupHint}>
-            استخدم النسخة المشفرة للحماية، أو CSV لفتح البيانات في Excel.
+            أنشئ ملفًا محليًا وشاركه مباشرة إلى Drive أو WhatsApp أو أي مكان.
           </Text>
           <View style={styles.backupActions}>
             <Pressable
-              onPress={() => setPasswordMode("export")}
+              onPress={() => exportFile("json")}
               style={styles.backupButton}
             >
-              <Text style={styles.backupButtonText}>تصدير مشفر</Text>
+              <Text style={styles.backupButtonText}>تصدير ومشاركة</Text>
             </Pressable>
             <Pressable
               onPress={() => exportFile("csv")}
@@ -299,11 +254,8 @@ export default function EmergencyScreen() {
             >
               <Text style={styles.backupButtonText}>تصدير Excel</Text>
             </Pressable>
-            <Pressable
-              onPress={() => setPasswordMode("import")}
-              style={styles.backupButton}
-            >
-              <Text style={styles.backupButtonText}>استيراد مشفر</Text>
+            <Pressable onPress={importFile} style={styles.backupButton}>
+              <Text style={styles.backupButtonText}>استيراد من ملف</Text>
             </Pressable>
           </View>
         </View>
@@ -372,53 +324,6 @@ export default function EmergencyScreen() {
             />
           </View>
         )}
-        <Modal
-          visible={passwordMode !== null}
-          transparent
-          animationType="fade"
-          onRequestClose={() => setPasswordMode(null)}
-        >
-          <View style={styles.modalBackdrop}>
-            <View style={styles.passwordModal}>
-              <Text style={styles.formTitle}>
-                {passwordMode === "export"
-                  ? "حماية النسخة"
-                  : "فتح النسخة المشفرة"}
-              </Text>
-              <Text style={styles.passwordHint}>
-                {passwordMode === "export"
-                  ? "أنشئ كلمة مرور من 8 أحرف أو أكثر. ستحتاجها عند الاستعادة."
-                  : "أدخل كلمة المرور التي استخدمتها عند التصدير."}
-              </Text>
-              <TextInput
-                value={backupPassword}
-                onChangeText={setBackupPassword}
-                placeholder="كلمة المرور"
-                placeholderTextColor="#9BAAB3"
-                secureTextEntry
-                autoCapitalize="none"
-                style={styles.input}
-                textAlign="right"
-              />
-              <View style={styles.modalActions}>
-                <Pressable
-                  onPress={() => {
-                    setPasswordMode(null);
-                    setBackupPassword("");
-                  }}
-                  style={styles.cancelButton}
-                >
-                  <Text style={styles.cancelText}>إلغاء</Text>
-                </Pressable>
-                <Pressable onPress={submitEncryptedBackup} style={styles.save}>
-                  <Text style={styles.saveText}>
-                    {passwordMode === "export" ? "تشفير ومشاركة" : "فك التشفير"}
-                  </Text>
-                </Pressable>
-              </View>
-            </View>
-          </View>
-        </Modal>
       </ScrollView>
     </ScreenContainer>
   );
