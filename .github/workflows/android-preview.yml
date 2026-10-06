@@ -70,6 +70,7 @@ jobs:
           fi
           echo "Native Android cryptographic RNG guard passed."
 
+
       - name: Verify backup KDF compatibility
         run: |
           set -euo pipefail
@@ -86,14 +87,14 @@ jobs:
 
       - name: Generate Android project
         env:
-          CI: "1"
+          CI: '1'
         run: pnpm exec expo prebuild --platform android --clean
 
       - name: Setup Java
         uses: actions/setup-java@v6
         with:
           distribution: temurin
-          java-version: "17"
+          java-version: '17'
 
       - name: Prepare stable Android signing
         env:

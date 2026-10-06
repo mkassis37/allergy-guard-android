@@ -1,11 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import React, {
-  createContext,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 
 export type RecordKind =
   | "medicine-allergy"
@@ -108,9 +102,7 @@ function normalizeKind(value: unknown): RecordKind {
     "surgery",
     "medical-note",
   ];
-  return allowed.includes(value as RecordKind)
-    ? (value as RecordKind)
-    : "medical-note";
+  return allowed.includes(value as RecordKind) ? (value as RecordKind) : "medical-note";
 }
 
 function normalizeRecords(value: unknown): AllergyRecord[] {
@@ -125,9 +117,7 @@ function normalizeRecords(value: unknown): AllergyRecord[] {
         kind: normalizeKind(record.kind),
         name: typeof record.name === "string" ? record.name : "سجل بدون اسم",
         activeIngredient:
-          typeof record.activeIngredient === "string"
-            ? record.activeIngredient
-            : "",
+          typeof record.activeIngredient === "string" ? record.activeIngredient : "",
         purpose: typeof record.purpose === "string" ? record.purpose : "",
         dosage: typeof record.dosage === "string" ? record.dosage : "",
         frequency: typeof record.frequency === "string" ? record.frequency : "",
@@ -141,8 +131,7 @@ function normalizeRecords(value: unknown): AllergyRecord[] {
         notes: typeof record.notes === "string" ? record.notes : "",
         eventDate: typeof record.eventDate === "string" ? record.eventDate : "",
         date: typeof record.date === "string" ? record.date : now,
-        updatedAt:
-          typeof record.updatedAt === "string" ? record.updatedAt : now,
+        updatedAt: typeof record.updatedAt === "string" ? record.updatedAt : now,
       };
     });
 }
@@ -175,10 +164,8 @@ function normalizePatients(value: unknown): Patient[] {
         ...profile,
         id: typeof source.id === "string" ? source.id : makeId("patient"),
         records: normalizeRecords(source.records),
-        createdAt:
-          typeof source.createdAt === "string" ? source.createdAt : now,
-        updatedAt:
-          typeof source.updatedAt === "string" ? source.updatedAt : now,
+        createdAt: typeof source.createdAt === "string" ? source.createdAt : now,
+        updatedAt: typeof source.updatedAt === "string" ? source.updatedAt : now,
       };
     });
 }
@@ -223,7 +210,7 @@ export function AllergyProvider({ children }: { children: React.ReactNode }) {
           setActivePatientId(
             requested && restored.some((p) => p.id === requested)
               ? requested
-              : (restored[0]?.id ?? null),
+              : restored[0]?.id ?? null,
           );
           return;
         }
@@ -309,11 +296,7 @@ export function AllergyProvider({ children }: { children: React.ReactNode }) {
         setPatients((current) =>
           current.map((patient) =>
             patient.id === id
-              ? {
-                  ...patient,
-                  ...normalized,
-                  updatedAt: new Date().toISOString(),
-                }
+              ? { ...patient, ...normalized, updatedAt: new Date().toISOString() }
               : patient,
           ),
         );
@@ -322,14 +305,13 @@ export function AllergyProvider({ children }: { children: React.ReactNode }) {
         setPatients((current) => {
           const next = current.filter((patient) => patient.id !== id);
           setActivePatientId((active) =>
-            active === id ? (next[0]?.id ?? null) : active,
+            active === id ? next[0]?.id ?? null : active,
           );
           return next;
         });
       },
       selectPatient: (id) => {
-        if (patients.some((patient) => patient.id === id))
-          setActivePatientId(id);
+        if (patients.some((patient) => patient.id === id)) setActivePatientId(id);
       },
       addRecord: (input) => {
         const now = new Date().toISOString();
@@ -354,13 +336,7 @@ export function AllergyProvider({ children }: { children: React.ReactNode }) {
           updatedAt: now,
           records: patient.records.map((record) =>
             record.id === id
-              ? {
-                  ...record,
-                  ...input,
-                  id: record.id,
-                  date: record.date,
-                  updatedAt: now,
-                }
+              ? { ...record, ...input, id: record.id, date: record.date, updatedAt: now }
               : record,
           ),
         }));
@@ -408,31 +384,23 @@ export function AllergyProvider({ children }: { children: React.ReactNode }) {
         if (!snapshot || typeof snapshot !== "object") {
           throw new Error("بيانات النسخة الاحتياطية غير صالحة.");
         }
-        const source = snapshot as {
-          patients?: unknown;
-          activePatientId?: unknown;
-        };
+        const source = snapshot as { patients?: unknown; activePatientId?: unknown };
         const restored = normalizePatients(source.patients);
         if (!Array.isArray(source.patients)) {
           throw new Error("النسخة الاحتياطية لا تحتوي على قائمة مرضى صالحة.");
         }
-        const requested =
-          typeof source.activePatientId === "string"
-            ? source.activePatientId
-            : null;
+        const requested = typeof source.activePatientId === "string" ? source.activePatientId : null;
         setPatients(restored);
         setActivePatientId(
           requested && restored.some((patient) => patient.id === requested)
             ? requested
-            : (restored[0]?.id ?? null),
+            : restored[0]?.id ?? null,
         );
       },
     };
   }, [patients, activePatientId, activePatient, hydrated]);
 
-  return (
-    <StoreContext.Provider value={value}>{children}</StoreContext.Provider>
-  );
+  return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
 }
 
 export function useAllergy() {
