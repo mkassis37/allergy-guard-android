@@ -134,11 +134,6 @@ export default function SettingsScreen() {
 
         <View style={styles.card}>
           <Text style={styles.cardTitle}>نسخة احتياطية محلية</Text>
-          <Text style={styles.cardText}>
-            لا تحتاج إلى بريد إلكتروني أو حساب أو كلمة مرور. ينشئ التطبيق ملفًا
-            واحدًا يحتوي على المرضى والسجلات، ثم يفتح نافذة المشاركة لإرساله إلى
-            Google Drive أو WhatsApp أو الكمبيوتر أو أي مكان تختاره.
-          </Text>
           <Pressable
             onPress={shareBackup}
             disabled={sharing}
@@ -159,11 +154,6 @@ export default function SettingsScreen() {
               </Text>
             )}
           </Pressable>
-          <Text style={styles.helper}>
-            احفظ الملف في مكان آمن. النسخة غير مشفرة لأنها مصممة للمشاركة
-            السريعة؛ تجنب إرسالها في مجموعات عامة لأنها تحتوي على بيانات صحية
-            شخصية.
-          </Text>
         </View>
 
         <View style={styles.card}>
