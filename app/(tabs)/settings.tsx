@@ -3,6 +3,7 @@ import { useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -43,6 +44,7 @@ export default function SettingsScreen() {
   const [sharing, setSharing] = useState(false);
   const [restoring, setRestoring] = useState(false);
   const [checking, setChecking] = useState(false);
+  const [backupSheetVisible, setBackupSheetVisible] = useState(false);
   const version = Constants.expoConfig?.version ?? "غير معروف";
 
   const shareBackup = async () => {
@@ -135,59 +137,92 @@ export default function SettingsScreen() {
         <Text style={styles.kicker}>التحكم بالتطبيق</Text>
         <Text style={styles.title}>الإعدادات</Text>
 
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>نسخة احتياطية محلية</Text>
-          <Pressable
-            onPress={shareBackup}
-            disabled={sharing}
-            style={({ pressed }) => [
-              styles.primaryButton,
-              pressed && styles.buttonPressed,
-              sharing && styles.buttonDisabled,
-            ]}
-          >
-            {sharing ? (
-              <View style={styles.buttonContent}>
-                <ActivityIndicator color="#FFFFFF" />
-                <Text style={styles.primaryButtonText}>جاري تجهيز الملف…</Text>
-              </View>
-            ) : (
-              <Text style={styles.primaryButtonText}>
-                إنشاء ومشاركة نسخة احتياطية
-              </Text>
-            )}
-          </Pressable>
-          <Text style={styles.autoBackupStatus}>
-            {autoBackupSavedAt
-              ? `تم الحفظ التلقائي محليًا: ${formatDate(autoBackupSavedAt)}`
-              : "سيتم حفظ نسخة تلقائية محليًا كل 15 دقيقة أثناء استخدام التطبيق."}
-          </Text>
-        </View>
+        <Pressable
+          onPress={() => setBackupSheetVisible(true)}
+          style={({ pressed }) => [
+            styles.settingRow,
+            pressed && styles.buttonPressed,
+          ]}
+        >
+          <Text style={styles.rowChevron}>‹</Text>
+          <View style={styles.rowCopy}>
+            <Text style={styles.rowTitle}>النسخ والحماية</Text>
+            <Text style={styles.rowSubtitle}>نسخة محلية يدوية وحفظ تلقائي</Text>
+          </View>
+          <View style={styles.rowIcon}>
+            <Text style={styles.rowIconText}>✓</Text>
+          </View>
+        </Pressable>
 
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>استعادة نسخة من أي مكان</Text>
-          <Text style={styles.cardText}>
-            نزّل ملف ‎.agbackup من Drive أو WhatsApp أو أي مكان حفظته فيه، ثم
-            اختره هنا. سيطلب التطبيق تأكيدًا قبل استبدال البيانات الحالية.
-          </Text>
-          <Pressable
-            onPress={restoreBackup}
-            disabled={restoring}
-            style={({ pressed }) => [
-              styles.secondaryButton,
-              pressed && styles.buttonPressed,
-              restoring && styles.buttonDisabled,
-            ]}
-          >
-            {restoring ? (
-              <ActivityIndicator color={palette.teal} />
-            ) : (
-              <Text style={styles.secondaryButtonText}>
-                اختيار ملف واستعادة النسخة
+        <Modal
+          visible={backupSheetVisible}
+          transparent
+          animationType="slide"
+          onRequestClose={() => setBackupSheetVisible(false)}
+        >
+          <View style={styles.modalRoot}>
+            <Pressable
+              style={styles.modalBackdrop}
+              onPress={() => setBackupSheetVisible(false)}
+            />
+            <View style={styles.bottomSheet}>
+              <View style={styles.sheetHeader}>
+                <Pressable onPress={() => setBackupSheetVisible(false)}>
+                  <Text style={styles.closeText}>إغلاق</Text>
+                </Pressable>
+                <Text style={styles.sheetTitle}>النسخ والحماية</Text>
+              </View>
+              <Text style={styles.sheetHint}>
+                الحفظ التلقائي محلي على الجهاز، أما النسخة اليدوية فتُرسل عبر
+                نافذة المشاركة.
               </Text>
-            )}
-          </Pressable>
-        </View>
+              <Pressable
+                onPress={shareBackup}
+                disabled={sharing}
+                style={({ pressed }) => [
+                  styles.primaryButton,
+                  pressed && styles.buttonPressed,
+                  sharing && styles.buttonDisabled,
+                ]}
+              >
+                {sharing ? (
+                  <View style={styles.buttonContent}>
+                    <ActivityIndicator color="#FFFFFF" />
+                    <Text style={styles.primaryButtonText}>
+                      جاري تجهيز الملف…
+                    </Text>
+                  </View>
+                ) : (
+                  <Text style={styles.primaryButtonText}>
+                    إنشاء ومشاركة نسخة يدوية
+                  </Text>
+                )}
+              </Pressable>
+              <Pressable
+                onPress={restoreBackup}
+                disabled={restoring}
+                style={({ pressed }) => [
+                  styles.restoreButton,
+                  pressed && styles.buttonPressed,
+                  restoring && styles.buttonDisabled,
+                ]}
+              >
+                {restoring ? (
+                  <ActivityIndicator color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.restoreButtonText}>
+                    استعادة نسخة JSON
+                  </Text>
+                )}
+              </Pressable>
+              <Text style={styles.autoBackupStatus}>
+                {autoBackupSavedAt
+                  ? `تم الحفظ التلقائي محليًا: ${formatDate(autoBackupSavedAt)}`
+                  : "سيتم حفظ نسخة تلقائية محليًا كل 15 دقيقة أثناء استخدام التطبيق."}
+              </Text>
+            </View>
+          </View>
+        </Modal>
 
         <View style={styles.card}>
           <Text style={styles.cardTitle}>تحديثات التطبيق</Text>
@@ -339,4 +374,79 @@ const styles = StyleSheet.create({
   },
   buttonPressed: { opacity: 0.78, transform: [{ scale: 0.98 }] },
   buttonDisabled: { opacity: 0.55 },
+  settingRow: {
+    backgroundColor: palette.card,
+    borderColor: palette.line,
+    borderRadius: 18,
+    borderWidth: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 14,
+    marginBottom: 14,
+  },
+  rowChevron: {
+    color: palette.muted,
+    fontSize: 30,
+    lineHeight: 32,
+    width: 28,
+  },
+  rowCopy: { flex: 1, alignItems: "flex-end", paddingHorizontal: 10 },
+  rowTitle: { color: palette.navy, fontSize: 18, fontWeight: "900" },
+  rowSubtitle: {
+    color: palette.muted,
+    fontSize: 13,
+    marginTop: 4,
+    textAlign: "right",
+  },
+  rowIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: palette.tealSoft,
+  },
+  rowIconText: { color: palette.teal, fontSize: 28, fontWeight: "900" },
+  modalRoot: { flex: 1, justifyContent: "flex-end" },
+  modalBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(23, 50, 77, 0.38)",
+  },
+  bottomSheet: {
+    backgroundColor: "#F8FAFF",
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    padding: 20,
+    paddingBottom: 30,
+  },
+  sheetHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 18,
+  },
+  sheetTitle: { color: "#172033", fontSize: 25, fontWeight: "900" },
+  closeText: { color: palette.teal, fontSize: 17, fontWeight: "900" },
+  sheetHint: {
+    color: palette.muted,
+    fontSize: 13,
+    lineHeight: 20,
+    textAlign: "right",
+    marginBottom: 14,
+  },
+  restoreButton: {
+    backgroundColor: "#12A39A",
+    borderRadius: 14,
+    minHeight: 52,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 14,
+    marginTop: 12,
+  },
+  restoreButtonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "900",
+    textAlign: "center",
+  },
 });
