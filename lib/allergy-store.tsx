@@ -6,6 +6,11 @@ import React, {
   useMemo,
   useState,
 } from "react";
+import {
+  AUTO_BACKUP_INTERVAL_MS,
+  AUTO_BACKUP_STORAGE_KEY,
+  createAutoBackupFile,
+} from "./auto-backup";
 
 export type RecordKind =
   | "medicine-allergy"
@@ -68,6 +73,7 @@ type StoreValue = {
   records: AllergyRecord[];
   profile: Profile;
   snapshot: AllergySnapshot;
+  autoBackupSavedAt: string | null;
   hydrated: boolean;
   addPatient: (input: PatientInput) => string;
   updatePatient: (id: string, input: PatientInput) => void;
@@ -208,6 +214,9 @@ export function AllergyProvider({ children }: { children: React.ReactNode }) {
   const [patients, setPatients] = useState<Patient[]>([]);
   const [activePatientId, setActivePatientId] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
+  const [autoBackupSavedAt, setAutoBackupSavedAt] = useState<string | null>(
+    null,
+  );
 
   useEffect(() => {
     let mounted = true;
@@ -269,10 +278,45 @@ export function AllergyProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!hydrated) return;
-    AsyncStorage.setItem(
-      STORAGE_KEY_V2,
-      JSON.stringify({ schemaVersion: 2, patients, activePatientId }),
-    ).catch((error) => console.warn("Failed to persist allergy store:", error));
+    const snapshot: AllergySnapshot = {
+      schemaVersion: 2,
+      patients,
+      activePatientId,
+    };
+    const persist = async () => {
+      await AsyncStorage.setItem(STORAGE_KEY_V2, JSON.stringify(snapshot));
+      const autoBackup = createAutoBackupFile(snapshot);
+      await AsyncStorage.setItem(
+        AUTO_BACKUP_STORAGE_KEY,
+        JSON.stringify(autoBackup),
+      );
+      setAutoBackupSavedAt(autoBackup.savedAt);
+    };
+    persist().catch((error) =>
+      console.warn("Failed to persist allergy store:", error),
+    );
+  }, [hydrated, patients, activePatientId]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    const interval = setInterval(async () => {
+      const snapshot: AllergySnapshot = {
+        schemaVersion: 2,
+        patients,
+        activePatientId,
+      };
+      const autoBackup = createAutoBackupFile(snapshot);
+      try {
+        await AsyncStorage.setItem(
+          AUTO_BACKUP_STORAGE_KEY,
+          JSON.stringify(autoBackup),
+        );
+        setAutoBackupSavedAt(autoBackup.savedAt);
+      } catch (error) {
+        console.warn("Failed to create automatic local backup:", error);
+      }
+    }, AUTO_BACKUP_INTERVAL_MS);
+    return () => clearInterval(interval);
   }, [hydrated, patients, activePatientId]);
 
   const activePatient = useMemo(
@@ -297,6 +341,7 @@ export function AllergyProvider({ children }: { children: React.ReactNode }) {
       records: activePatient?.records ?? [],
       profile: profileFromPatient(activePatient),
       snapshot: { schemaVersion: 2, patients, activePatientId },
+      autoBackupSavedAt,
       hydrated,
       addPatient: (input) => {
         const now = new Date().toISOString();
@@ -436,7 +481,7 @@ export function AllergyProvider({ children }: { children: React.ReactNode }) {
         );
       },
     };
-  }, [patients, activePatientId, activePatient, hydrated]);
+  }, [patients, activePatientId, activePatient, autoBackupSavedAt, hydrated]);
 
   return (
     <StoreContext.Provider value={value}>{children}</StoreContext.Provider>

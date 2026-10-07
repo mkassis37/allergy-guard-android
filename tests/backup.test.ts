@@ -7,6 +7,10 @@ import {
 import { csvRows, makeBackupPayload } from "../lib/backup-serialization";
 import { validateBackup } from "../lib/backup-format";
 import { validateDeviceBackup } from "../lib/device-backup-format";
+import {
+  AUTO_BACKUP_INTERVAL_MS,
+  createAutoBackupFile,
+} from "../lib/auto-backup";
 
 const profile = {
   fullName: "أحمد",
@@ -30,6 +34,19 @@ const records = [
 ];
 
 describe("local backup export and import", () => {
+  it("creates a periodic local auto-backup payload", () => {
+    const snapshot = {
+      schemaVersion: 2 as const,
+      patients: [],
+      activePatientId: null,
+    };
+    const result = createAutoBackupFile(snapshot, "2026-10-07T06:00:00.000Z");
+    expect(result.app).toBe("allergy-guard-auto-backup");
+    expect(result.savedAt).toBe("2026-10-07T06:00:00.000Z");
+    expect(result.data).toEqual(snapshot);
+    expect(AUTO_BACKUP_INTERVAL_MS).toBe(15 * 60 * 1000);
+  });
+
   it("validates a shareable local device backup without credentials", () => {
     const result = validateDeviceBackup({
       app: "allergy-guard-local-backup",

@@ -39,7 +39,7 @@ function formatDate(value: string) {
 
 export default function SettingsScreen() {
   const { checkNow } = useGithubUpdater({ autoCheck: false });
-  const { snapshot, restoreSnapshot } = useAllergy();
+  const { snapshot, restoreSnapshot, autoBackupSavedAt } = useAllergy();
   const [sharing, setSharing] = useState(false);
   const [restoring, setRestoring] = useState(false);
   const [checking, setChecking] = useState(false);
@@ -80,6 +80,7 @@ export default function SettingsScreen() {
             text: "استرجاع الآن",
             style: "destructive",
             onPress: () => {
+              setRestoring(true);
               try {
                 restoreSnapshot(result.data);
                 Alert.alert(
@@ -93,6 +94,8 @@ export default function SettingsScreen() {
                     ? error.message
                     : "بيانات النسخة غير صالحة.",
                 );
+              } finally {
+                setRestoring(false);
               }
             },
           },
@@ -154,6 +157,11 @@ export default function SettingsScreen() {
               </Text>
             )}
           </Pressable>
+          <Text style={styles.autoBackupStatus}>
+            {autoBackupSavedAt
+              ? `تم الحفظ التلقائي محليًا: ${formatDate(autoBackupSavedAt)}`
+              : "سيتم حفظ نسخة تلقائية محليًا كل 15 دقيقة أثناء استخدام التطبيق."}
+          </Text>
         </View>
 
         <View style={styles.card}>
@@ -296,6 +304,13 @@ const styles = StyleSheet.create({
     lineHeight: 19,
     textAlign: "right",
     marginTop: 12,
+  },
+  autoBackupStatus: {
+    color: palette.muted,
+    fontSize: 12,
+    lineHeight: 19,
+    textAlign: "right",
+    marginTop: 10,
   },
   versionRow: {
     backgroundColor: palette.blueSoft,
