@@ -215,11 +215,13 @@ export default function SettingsScreen() {
                   </Text>
                 )}
               </Pressable>
-              <Text style={styles.autoBackupStatus}>
-                {autoBackupSavedAt
-                  ? `تم الحفظ التلقائي محليًا: ${formatDate(autoBackupSavedAt)}`
-                  : "سيتم حفظ نسخة تلقائية محليًا كل 15 دقيقة أثناء استخدام التطبيق."}
-              </Text>
+              <View style={styles.statusBadge}>
+                <Text style={styles.autoBackupStatus}>
+                  {autoBackupSavedAt
+                    ? `تم الحفظ التلقائي محليًا: ${formatDate(autoBackupSavedAt)}`
+                    : "سيتم حفظ نسخة تلقائية محليًا كل 15 دقيقة أثناء استخدام التطبيق."}
+                </Text>
+              </View>
             </View>
           </View>
         </Modal>
@@ -341,11 +343,22 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   autoBackupStatus: {
-    color: palette.muted,
+    color: palette.teal,
     fontSize: 12,
     lineHeight: 19,
     textAlign: "right",
-    marginTop: 10,
+    fontWeight: "700",
+  },
+  statusBadge: {
+    alignSelf: "flex-end",
+    backgroundColor: palette.tealSoft,
+    borderColor: "#BBDDE0",
+    borderRadius: 10,
+    borderWidth: 1,
+    marginTop: 12,
+    maxWidth: "100%",
+    paddingHorizontal: 12,
+    paddingVertical: 7,
   },
   versionRow: {
     backgroundColor: palette.blueSoft,
@@ -417,7 +430,9 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
     padding: 20,
-    paddingBottom: 30,
+    paddingBottom: 42,
+    marginBottom: 22,
+    maxHeight: "68%",
   },
   sheetHeader: {
     flexDirection: "row",
