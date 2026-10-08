@@ -75,7 +75,9 @@ export function validateBackup(value: unknown): BackupPayload {
     !Array.isArray(input.records) ||
     !input.records.every(isRecord)
   ) {
-    throw new Error("هذا الملف ليس نسخة احتياطية صالحة من حارس الحساسية.");
+    throw new Error(
+      "هذا الملف ليس نسخة احتياطية صالحة من Allergy & Health Traker.",
+    );
   }
   const profile =
     input.profile && typeof input.profile === "object"

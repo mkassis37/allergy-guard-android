@@ -28,7 +28,7 @@ async function shareFile(uri: string) {
   }
   await Sharing.shareAsync(uri, {
     mimeType: "application/octet-stream",
-    dialogTitle: "إرسال نسخة حارس الحساسية",
+    dialogTitle: "إرسال نسخة Allergy & Health Traker",
     UTI: "public.data",
   });
 }

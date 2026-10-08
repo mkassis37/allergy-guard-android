@@ -1,11 +1,11 @@
 import type { ExpoConfig } from "expo/config";
 
-const version = "0.8.3";
+const version = "0.8.4";
 const [major, minor, patch] = version.split(".").map(Number);
 const versionCode = major * 10000 + minor * 100 + patch;
 
 const config: ExpoConfig = {
-  name: "حارس الحساسية",
+  name: "Allergy & Health Traker",
   slug: "allergy-guard-android",
   owner: "malak-new",
   version,

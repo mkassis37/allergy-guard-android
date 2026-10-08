@@ -85,7 +85,7 @@ export function buildRecordsPdfHtml(
   </style>
 </head>
 <body>
-  <h1>حارس الحساسية — السجل الصحي</h1>
+  <h1>Allergy & Health Traker — السجل الصحي</h1>
   <div class="subtitle">نسخة PDF من السجلات المحفوظة على الجهاز</div>
 
   <div class="profile">
@@ -143,7 +143,7 @@ export async function exportRecordsPdf(
 
   await Sharing.shareAsync(result.uri, {
     mimeType: "application/pdf",
-    dialogTitle: "مشاركة سجل حارس الحساسية PDF",
+    dialogTitle: "مشاركة سجل Allergy & Health Traker PDF",
     UTI: "com.adobe.pdf",
   });
 }

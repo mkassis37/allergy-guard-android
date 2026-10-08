@@ -26,7 +26,7 @@ async function shareFile(uri: string, mimeType: string) {
     throw new Error("المشاركة غير متاحة على هذا الجهاز.");
   await Sharing.shareAsync(uri, {
     mimeType,
-    dialogTitle: "مشاركة نسخة حارس الحساسية",
+    dialogTitle: "مشاركة نسخة Allergy & Health Traker",
   });
 }
 

@@ -90,7 +90,7 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.hero}>
-          <Text style={styles.brand}>حارس الحساسية</Text>
+          <Text style={styles.brand}>Allergy & Health Traker</Text>
           <Text style={styles.heroTitle}>ملفك الصحي والعائلي في مكان واحد</Text>
           <Text style={styles.heroText}>
             رتّب المرضى والحساسيات والأدوية والسجلات المهمة، وصدّر تقريرًا عند

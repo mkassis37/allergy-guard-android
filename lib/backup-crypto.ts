@@ -117,7 +117,7 @@ export async function decryptBackupPayload(
     throw new Error("ملف النسخة المشفرة غير صالح.");
   }
   if (!isEncryptedBackup(parsed)) {
-    throw new Error("هذا الملف ليس نسخة مشفرة من حارس الحساسية.");
+    throw new Error("هذا الملف ليس نسخة مشفرة من Allergy & Health Traker.");
   }
   if (
     !Number.isInteger(parsed.iterations) ||

@@ -44,7 +44,7 @@ export default function EmergencyScreen() {
   const [draft, setDraft] = useState(profile);
   const shareCard = async () => {
     const lines = [
-      "بطاقة الطوارئ الطبية — حارس الحساسية",
+      "بطاقة الطوارئ الطبية — Allergy & Health Traker",
       `الاسم: ${profile.fullName || "غير مسجل"}`,
       `الأدوية المسببة: ${
         allergies

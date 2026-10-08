@@ -212,7 +212,9 @@ export async function decryptDeviceBackup(
     throw new Error("ملف النسخة الاحتياطية غير صالح.");
   }
   if (!isEncryptedDeviceBackup(envelope)) {
-    throw new Error("هذا الملف ليس نسخة مشفرة صالحة من حارس الحساسية.");
+    throw new Error(
+      "هذا الملف ليس نسخة مشفرة صالحة من Allergy & Health Traker.",
+    );
   }
 
   try {
@@ -269,13 +271,11 @@ async function pruneOldBackups() {
       .sort()
       .reverse();
     await Promise.all(
-      backups
-        .slice(7)
-        .map((name) =>
-          FileSystem.deleteAsync(`${BACKUP_DIR}${name}`, {
-            idempotent: true,
-          }).catch(() => undefined),
-        ),
+      backups.slice(7).map((name) =>
+        FileSystem.deleteAsync(`${BACKUP_DIR}${name}`, {
+          idempotent: true,
+        }).catch(() => undefined),
+      ),
     );
   } catch {
     // Cleanup is best-effort and must never block a fresh backup.
@@ -412,7 +412,7 @@ export async function emailEncryptedBackupNow() {
   const { uri, lastPreparedAt } = await prepareEncryptedDeviceBackup();
   const subject = `Allergy Guard encrypted backup - ${new Date().toISOString().slice(0, 10)}`;
   const body =
-    "نسخة احتياطية مشفرة من تطبيق حارس الحساسية. احتفظ برمز حماية النسخة في مكان آمن؛ لا يمكن فتح الملف بدونه.";
+    "نسخة احتياطية مشفرة من تطبيق Allergy & Health Traker. احتفظ برمز حماية النسخة في مكان آمن؛ لا يمكن فتح الملف بدونه.";
 
   let mailError: unknown;
   try {
@@ -513,7 +513,7 @@ export async function syncDailyBackupReminder(enabled: boolean) {
 
   const id = await Notifications.scheduleNotificationAsync({
     content: {
-      title: "حارس الحساسية",
+      title: "Allergy & Health Traker",
       body: "حان وقت إرسال النسخة الاحتياطية المشفرة إلى بريدك.",
       data: { screen: "settings", action: "email-backup" },
     },

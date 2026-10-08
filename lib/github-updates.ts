@@ -84,7 +84,7 @@ export function parseLatestRelease(
     title:
       typeof input.name === "string" && input.name.trim()
         ? input.name
-        : `حارس الحساسية ${version}`,
+        : `Allergy & Health Traker ${version}`,
     releaseUrl,
     apkUrl: apk.browser_download_url,
     publishedAt:
