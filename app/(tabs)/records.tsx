@@ -22,7 +22,6 @@ import {
   formatArabicDate,
 } from "@/components/date-picker-field";
 import { FormActionBar } from "@/components/form-action-bar";
-import { PersistentSaveBanner } from "@/components/persistent-save-banner";
 import {
   useAllergy,
   type AllergyRecord,
@@ -766,24 +765,6 @@ export default function RecordsScreen() {
         >
           <View style={styles.editorSheet}>
             <View style={styles.modalHeader}>
-              <TouchableOpacity
-                onPress={save}
-                disabled={saving}
-                activeOpacity={0.72}
-                style={[
-                  styles.headerSaveButton,
-                  saving && styles.headerSaveDisabled,
-                ]}
-                accessibilityRole="button"
-                accessibilityLabel={
-                  editingId ? "حفظ التعديلات" : saveActionLabelFor(kind)
-                }
-                accessibilityHint="اضغط لحفظ السجل"
-              >
-                <Text style={styles.headerSaveButtonText}>
-                  {saving ? "..." : "حفظ"}
-                </Text>
-              </TouchableOpacity>
               <View style={styles.editorHeaderText}>
                 <Text style={styles.modalTitle}>
                   {editingId
@@ -798,13 +779,6 @@ export default function RecordsScreen() {
                 <Text style={styles.close}>×</Text>
               </Pressable>
             </View>
-            <PersistentSaveBanner
-              label={editingId ? "حفظ التعديلات" : saveActionLabelFor(kind)}
-              onPress={save}
-              busy={saving}
-              disabled={saving}
-            />
-
             <ScrollView
               style={styles.editorScroll}
               contentContainerStyle={[

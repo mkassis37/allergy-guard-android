@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   Alert,
+  KeyboardAvoidingView,
   Modal,
   Platform,
   Pressable,
@@ -18,7 +19,6 @@ import {
   formatArabicDate,
 } from "@/components/date-picker-field";
 import { FormActionBar } from "@/components/form-action-bar";
-import { PersistentSaveBanner } from "@/components/persistent-save-banner";
 import {
   emptyProfile,
   useAllergy,
@@ -261,21 +261,13 @@ export default function PatientsScreen() {
         animationType="slide"
         onRequestClose={() => setModalVisible(false)}
       >
-        <View
+        <KeyboardAvoidingView
           style={[styles.backdrop, { paddingBottom: systemBottomClearance }]}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          keyboardVerticalOffset={0}
         >
           <View style={styles.sheet}>
             <View style={styles.sheetHeader}>
-              <TouchableOpacity
-                onPress={save}
-                activeOpacity={0.72}
-                style={styles.headerSaveButton}
-                accessibilityRole="button"
-                accessibilityLabel={editingId ? "حفظ التعديلات" : "حفظ المريض"}
-                accessibilityHint="اضغط لحفظ بيانات المريض"
-              >
-                <Text style={styles.headerSaveButtonText}>حفظ</Text>
-              </TouchableOpacity>
               <Text style={styles.sheetTitle}>
                 {editingId ? "تعديل بيانات المريض" : "إضافة مريض جديد"}
               </Text>
@@ -283,10 +275,6 @@ export default function PatientsScreen() {
                 <Text style={styles.close}>×</Text>
               </Pressable>
             </View>
-            <PersistentSaveBanner
-              label={editingId ? "حفظ التعديلات" : "حفظ المريض"}
-              onPress={save}
-            />
             <ScrollView
               style={styles.formScroll}
               showsVerticalScrollIndicator={false}
@@ -374,7 +362,7 @@ export default function PatientsScreen() {
               sticky
             />
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </ScreenContainer>
   );

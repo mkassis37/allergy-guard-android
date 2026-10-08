@@ -1,6 +1,8 @@
 import { useState } from "react";
 import {
   Alert,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   ScrollView,
   Share,
@@ -12,7 +14,6 @@ import {
 } from "react-native";
 import { ScreenContainer } from "@/components/screen-container";
 import { FormActionBar } from "@/components/form-action-bar";
-import { PersistentSaveBanner } from "@/components/persistent-save-banner";
 import { useAllergy } from "@/lib/allergy-store";
 import { exportBackup, importJsonBackup } from "@/lib/backup";
 
@@ -125,6 +126,8 @@ export default function EmergencyScreen() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
       >
         <View style={styles.header}>
           <Text style={styles.subtitle}>
@@ -267,55 +270,51 @@ export default function EmergencyScreen() {
         </View>
         {editing && (
           <View style={styles.form}>
-            <View style={styles.formHeaderRow}>
-              <Text style={styles.formTitle}>تعديل بيانات البطاقة</Text>
-              <TouchableOpacity
-                onPress={save}
-                activeOpacity={0.72}
-                style={styles.formHeaderSave}
-                accessibilityRole="button"
-                accessibilityLabel="حفظ التعديلات"
-                accessibilityHint="اضغط لحفظ بيانات بطاقة الطوارئ"
-              >
-                <Text style={styles.formHeaderSaveText}>حفظ</Text>
-              </TouchableOpacity>
-            </View>
-            <PersistentSaveBanner label="حفظ التعديلات" onPress={save} />
-            <TextInput
-              value={draft.fullName}
-              onChangeText={(value) => setDraft({ ...draft, fullName: value })}
-              placeholder="الاسم الكامل"
-              placeholderTextColor="#9BAAB3"
-              style={styles.input}
-              textAlign="right"
-            />
-            <TextInput
-              value={draft.phone}
-              onChangeText={(value) => setDraft({ ...draft, phone: value })}
-              placeholder="رقم الهاتف"
-              placeholderTextColor="#9BAAB3"
-              style={styles.input}
-              textAlign="right"
-              keyboardType="phone-pad"
-            />
-            <TextInput
-              value={draft.emergencyContact}
-              onChangeText={(value) =>
-                setDraft({ ...draft, emergencyContact: value })
-              }
-              placeholder="جهة اتصال للطوارئ + الهاتف"
-              placeholderTextColor="#9BAAB3"
-              style={styles.input}
-              textAlign="right"
-            />
-            <TextInput
-              value={draft.doctor}
-              onChangeText={(value) => setDraft({ ...draft, doctor: value })}
-              placeholder="اسم الطبيب / المنشأة"
-              placeholderTextColor="#9BAAB3"
-              style={styles.input}
-              textAlign="right"
-            />
+            <KeyboardAvoidingView
+              behavior={Platform.OS === "ios" ? "padding" : "height"}
+              keyboardVerticalOffset={0}
+            >
+              <View style={styles.formHeaderRow}>
+                <Text style={styles.formTitle}>تعديل بيانات البطاقة</Text>
+              </View>
+              <TextInput
+                value={draft.fullName}
+                onChangeText={(value) =>
+                  setDraft({ ...draft, fullName: value })
+                }
+                placeholder="الاسم الكامل"
+                placeholderTextColor="#9BAAB3"
+                style={styles.input}
+                textAlign="right"
+              />
+              <TextInput
+                value={draft.phone}
+                onChangeText={(value) => setDraft({ ...draft, phone: value })}
+                placeholder="رقم الهاتف"
+                placeholderTextColor="#9BAAB3"
+                style={styles.input}
+                textAlign="right"
+                keyboardType="phone-pad"
+              />
+              <TextInput
+                value={draft.emergencyContact}
+                onChangeText={(value) =>
+                  setDraft({ ...draft, emergencyContact: value })
+                }
+                placeholder="جهة اتصال للطوارئ + الهاتف"
+                placeholderTextColor="#9BAAB3"
+                style={styles.input}
+                textAlign="right"
+              />
+              <TextInput
+                value={draft.doctor}
+                onChangeText={(value) => setDraft({ ...draft, doctor: value })}
+                placeholder="اسم الطبيب / المنشأة"
+                placeholderTextColor="#9BAAB3"
+                style={styles.input}
+                textAlign="right"
+              />
+            </KeyboardAvoidingView>
             <FormActionBar
               label="حفظ التعديلات"
               onPress={save}

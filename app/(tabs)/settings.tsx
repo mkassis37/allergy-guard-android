@@ -180,7 +180,7 @@ export default function SettingsScreen() {
                 onPress={shareBackup}
                 disabled={sharing}
                 style={({ pressed }) => [
-                  styles.primaryButton,
+                  styles.jsonCreateButton,
                   pressed && styles.buttonPressed,
                   sharing && styles.buttonDisabled,
                 ]}
@@ -188,13 +188,11 @@ export default function SettingsScreen() {
                 {sharing ? (
                   <View style={styles.buttonContent}>
                     <ActivityIndicator color="#FFFFFF" />
-                    <Text style={styles.primaryButtonText}>
-                      جاري تجهيز الملف…
-                    </Text>
+                    <Text style={styles.jsonButtonText}>جاري تجهيز الملف…</Text>
                   </View>
                 ) : (
-                  <Text style={styles.primaryButtonText}>
-                    إنشاء ومشاركة نسخة يدوية
+                  <Text style={styles.jsonButtonText}>
+                    إنشاء نسخة JSON ومشاركتها
                   </Text>
                 )}
               </Pressable>
@@ -202,7 +200,7 @@ export default function SettingsScreen() {
                 onPress={restoreBackup}
                 disabled={restoring}
                 style={({ pressed }) => [
-                  styles.restoreButton,
+                  styles.jsonRestoreButton,
                   pressed && styles.buttonPressed,
                   restoring && styles.buttonDisabled,
                 ]}
@@ -210,9 +208,7 @@ export default function SettingsScreen() {
                 {restoring ? (
                   <ActivityIndicator color="#FFFFFF" />
                 ) : (
-                  <Text style={styles.restoreButtonText}>
-                    استعادة نسخة JSON
-                  </Text>
+                  <Text style={styles.jsonButtonText}>استعادة نسخة JSON</Text>
                 )}
               </Pressable>
               <View style={styles.statusBadge}>
@@ -315,6 +311,33 @@ const styles = StyleSheet.create({
   primaryButtonText: {
     color: "#FFFFFF",
     fontSize: 15,
+    fontWeight: "900",
+    textAlign: "center",
+  },
+  jsonCreateButton: {
+    backgroundColor: "#DDF7F4",
+    borderColor: palette.teal,
+    borderRadius: 14,
+    borderWidth: 1,
+    minHeight: 56,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 14,
+  },
+  jsonRestoreButton: {
+    backgroundColor: "#EAF0FA",
+    borderColor: "#7C9BC4",
+    borderRadius: 14,
+    borderWidth: 1,
+    minHeight: 56,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 14,
+    marginTop: 12,
+  },
+  jsonButtonText: {
+    color: "#172033",
+    fontSize: 16,
     fontWeight: "900",
     textAlign: "center",
   },
@@ -430,9 +453,9 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
     padding: 20,
-    paddingBottom: 42,
-    marginBottom: 22,
-    maxHeight: "68%",
+    paddingBottom: 32,
+    marginBottom: 0,
+    maxHeight: "84%",
   },
   sheetHeader: {
     flexDirection: "row",
