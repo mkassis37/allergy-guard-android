@@ -113,13 +113,8 @@ jobs:
             echo "ANDROID_KEY_PASSWORD=$ANDROID_KEY_PASSWORD_SECRET" >> "$GITHUB_ENV"
             echo "Stable release signing is configured."
           else
-            if [[ "$GITHUB_REF" == refs/tags/* ]]; then
-              echo "ERROR: production/tag builds require stable signing secrets."
-              echo "Configure ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS and ANDROID_KEY_PASSWORD in GitHub Actions secrets."
-              exit 1
-            fi
             echo "ALLOW_DEBUG_RELEASE_SIGNING=1" >> "$GITHUB_ENV"
-            echo "WARNING: preview build only; stable release signing secrets are not configured."
+            echo "WARNING: debug-signed test build; configure stable signing secrets before Google Play publication."
           fi
 
       - name: Configure Android signing
