@@ -40,6 +40,13 @@ const config: ExpoConfig = {
   plugins: [
     "expo-router",
     [
+      "expo-local-authentication",
+      {
+        faceIDPermission:
+          "Allow $(PRODUCT_NAME) to protect your medical records.",
+      },
+    ],
+    [
       "expo-splash-screen",
       {
         image: "./assets/images/splash-icon.png",

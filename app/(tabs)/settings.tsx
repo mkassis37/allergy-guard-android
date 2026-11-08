@@ -1,5 +1,5 @@
 import Constants from "expo-constants";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -14,6 +14,10 @@ import { ScreenContainer } from "@/components/screen-container";
 import { useGithubUpdater } from "@/hooks/use-github-updater";
 import { useAllergy } from "@/lib/allergy-store";
 import { pickLocalBackup, shareLocalBackup } from "@/lib/device-backup";
+import {
+  getBiometricLockEnabled,
+  setBiometricLockEnabled,
+} from "@/lib/biometric-lock";
 
 const palette = {
   navy: "#17324D",
@@ -45,7 +49,26 @@ export default function SettingsScreen() {
   const [restoring, setRestoring] = useState(false);
   const [checking, setChecking] = useState(false);
   const [backupSheetVisible, setBackupSheetVisible] = useState(false);
+  const [biometricEnabled, setBiometricEnabled] = useState(false);
   const version = Constants.expoConfig?.version ?? "غير معروف";
+
+  useEffect(() => {
+    getBiometricLockEnabled()
+      .then(setBiometricEnabled)
+      .catch(() => setBiometricEnabled(false));
+  }, []);
+
+  const toggleBiometricLock = async () => {
+    const next = !biometricEnabled;
+    await setBiometricLockEnabled(next);
+    setBiometricEnabled(next);
+    Alert.alert(
+      next ? "تم تفعيل القفل" : "تم إيقاف القفل",
+      next
+        ? "سيطلب التطبيق البصمة أو التعرف على الوجه بعد خروجه للخلفية لمدة دقيقة."
+        : "لن يطلب التطبيق مصادقة حيوية عند العودة إليه.",
+    );
+  };
 
   const shareBackup = async () => {
     if (sharing) return;
@@ -151,6 +174,32 @@ export default function SettingsScreen() {
           </View>
           <View style={styles.rowIcon}>
             <Text style={styles.rowIconText}>✓</Text>
+          </View>
+        </Pressable>
+
+        <Pressable
+          onPress={() => void toggleBiometricLock()}
+          style={({ pressed }) => [
+            styles.settingRow,
+            pressed && styles.buttonPressed,
+          ]}
+        >
+          <Text style={styles.rowChevron}>‹</Text>
+          <View style={styles.rowCopy}>
+            <Text style={styles.rowTitle}>القفل الحيوي</Text>
+            <Text style={styles.rowSubtitle}>
+              {biometricEnabled ? "مفعل — بصمة أو وجه" : "متوقف"}
+            </Text>
+          </View>
+          <View
+            style={[
+              styles.rowIcon,
+              biometricEnabled && { backgroundColor: palette.tealSoft },
+            ]}
+          >
+            <Text style={styles.rowIconText}>
+              {biometricEnabled ? "✓" : "•"}
+            </Text>
           </View>
         </Pressable>
 
