@@ -30,6 +30,7 @@ import {
 } from "@/lib/allergy-store";
 import { exportRecordsPdf } from "@/lib/pdf-export";
 import { exportBackup } from "@/lib/backup";
+import * as DocumentPicker from "expo-document-picker";
 
 const C = {
   navy: "#173A57",
@@ -209,6 +210,10 @@ export default function RecordsScreen() {
   const [severity, setSeverity] = useState<Severity>("متوسطة");
   const [notes, setNotes] = useState("");
   const [eventDate, setEventDate] = useState("");
+  const [hospital, setHospital] = useState("");
+  const [anesthesiaType, setAnesthesiaType] = useState("");
+  const [anesthesiaNotes, setAnesthesiaNotes] = useState("");
+  const [attachmentUris, setAttachmentUris] = useState<string[]>([]);
   const [exporting, setExporting] = useState<"pdf" | "csv" | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -254,6 +259,10 @@ export default function RecordsScreen() {
     setSeverity("متوسطة");
     setNotes("");
     setEventDate("");
+    setHospital("");
+    setAnesthesiaType("");
+    setAnesthesiaNotes("");
+    setAttachmentUris([]);
     setEditingId(null);
   };
 
@@ -281,11 +290,29 @@ export default function RecordsScreen() {
     setSeverity(record.severity ?? "متوسطة");
     setNotes(record.notes ?? "");
     setEventDate(record.eventDate ?? "");
+    setHospital(record.hospital ?? "");
+    setAnesthesiaType(record.anesthesiaType ?? "");
+    setAnesthesiaNotes(record.anesthesiaNotes ?? "");
+    setAttachmentUris(record.attachmentUris ?? []);
     setViewRecord(null);
     setEditorVisible(true);
   };
 
-  const save = () => {
+  const pickMedicalAttachment = async () => {
+    const result = await DocumentPicker.getDocumentAsync({
+      type: ["application/pdf", "image/*"],
+      copyToCacheDirectory: true,
+      multiple: true,
+    });
+    if (!result.canceled) {
+      setAttachmentUris((current) => [
+        ...current,
+        ...result.assets.map((asset) => asset.uri),
+      ]);
+    }
+  };
+
+  const save = (skipMedicationWarning = false) => {
     if (!activePatient || saving) return;
     if (!name.trim()) {
       Alert.alert("بيانات ناقصة", `أدخل ${nameLabelFor(kind)} أولًا.`);
@@ -301,6 +328,34 @@ export default function RecordsScreen() {
       kind === "medicine-allergy" ||
       kind === "medicine-tolerated";
 
+    if (isMedication && !skipMedicationWarning && kind !== "medicine-allergy") {
+      const entered = `${name} ${activeIngredient}`
+        .trim()
+        .toLocaleLowerCase("ar");
+      const match = records.find((record) => {
+        if (record.kind !== "medicine-allergy") return false;
+        const known =
+          `${record.name} ${record.activeIngredient ?? ""}`.toLocaleLowerCase(
+            "ar",
+          );
+        return (
+          entered.length > 2 &&
+          (known.includes(entered) || entered.includes(known))
+        );
+      });
+      if (match) {
+        Alert.alert(
+          "تحذير حساسية دوائية",
+          `يتطابق الدواء مع «${match.name}»${match.activeIngredient ? ` (${match.activeIngredient})` : ""}. راجع الطبيب قبل استخدامه.`,
+          [
+            { text: "إلغاء الحفظ", style: "cancel" },
+            { text: "حفظ رغم التحذير", onPress: () => save(true) },
+          ],
+        );
+        return;
+      }
+    }
+
     const input = {
       kind,
       name: name.trim(),
@@ -312,6 +367,10 @@ export default function RecordsScreen() {
       severity: isAllergy ? severity : undefined,
       notes: notes.trim(),
       eventDate: eventDate.trim(),
+      hospital: kind === "surgery" ? hospital.trim() : "",
+      anesthesiaType: kind === "surgery" ? anesthesiaType.trim() : "",
+      anesthesiaNotes: kind === "surgery" ? anesthesiaNotes.trim() : "",
+      attachmentUris,
     };
 
     const savedKind = kind;
@@ -930,6 +989,45 @@ export default function RecordsScreen() {
                 maximumDate={maximumDateFor(kind)}
                 helperText="اختيار التاريخ من التقويم يمنع أخطاء الكتابة."
               />
+              {kind === "surgery" ? (
+                <>
+                  <Field
+                    label="المستشفى"
+                    value={hospital}
+                    onChange={setHospital}
+                    placeholder="اسم المستشفى أو المنشأة"
+                  />
+                  <Field
+                    label="نوع التخدير المستخدم"
+                    value={anesthesiaType}
+                    onChange={setAnesthesiaType}
+                    placeholder="عام، نصفي، موضعي..."
+                  />
+                  <Field
+                    label="مضاعفات أو ملاحظات التخدير السابقة"
+                    value={anesthesiaNotes}
+                    onChange={setAnesthesiaNotes}
+                    multiline
+                    placeholder="اذكر أي تفاعل أو تنبيه مهم لطبيب التخدير"
+                  />
+                  <Pressable
+                    onPress={pickMedicalAttachment}
+                    style={({ pressed }) => [
+                      styles.attachmentButton,
+                      pressed && styles.pressed,
+                    ]}
+                  >
+                    <Text style={styles.attachmentButtonText}>
+                      إرفاق تقرير طبي أو ملخص خروج
+                    </Text>
+                    <Text style={styles.attachmentHint}>
+                      {attachmentUris.length
+                        ? `تم إرفاق ${attachmentUris.length} ملف(ات) محليًا`
+                        : "PDF أو صورة — تحفظ محليًا على الجهاز"}
+                    </Text>
+                  </Pressable>
+                </>
+              ) : null}
               <Field
                 label="ملاحظات إضافية"
                 value={notes}
@@ -1491,6 +1589,26 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   headerSaveDisabled: { opacity: 0.55 },
+  attachmentButton: {
+    backgroundColor: C.blueSoft,
+    borderColor: "#AFC7E3",
+    borderWidth: 1,
+    borderRadius: 14,
+    padding: 13,
+    marginTop: 4,
+  },
+  attachmentButtonText: {
+    color: C.blue,
+    fontSize: 15,
+    fontWeight: "900",
+    textAlign: "right",
+  },
+  attachmentHint: {
+    color: C.muted,
+    fontSize: 12,
+    textAlign: "right",
+    marginTop: 4,
+  },
   kindOptionsWrap: {
     flexDirection: "row-reverse",
     flexWrap: "wrap",

@@ -158,6 +158,12 @@ export default function EmergencyScreen() {
           <Text style={styles.fieldHeading}>بيانات الشخص</Text>
           <View style={styles.infoGrid}>
             <View style={styles.info}>
+              <Text style={styles.infoLabel}>فصيلة الدم</Text>
+              <Text style={styles.infoValue}>
+                {profile.bloodType || "غير مسجلة"}
+              </Text>
+            </View>
+            <View style={styles.info}>
               <Text style={styles.infoLabel}>الاسم</Text>
               <Text style={styles.infoValue}>
                 {profile.fullName || "غير مسجل"}
@@ -169,6 +175,18 @@ export default function EmergencyScreen() {
                 {profile.emergencyContact || "غير مسجل"}
               </Text>
             </View>
+          </View>
+          <View style={styles.criticalBox}>
+            <Text style={styles.criticalTitle}>الحساسيات الحرجة</Text>
+            <Text style={styles.criticalText}>
+              {allergies
+                .filter((item) => item.severity === "شديدة")
+                .map(
+                  (item) =>
+                    `${item.name}${item.activeIngredient ? ` (${item.activeIngredient})` : ""}`,
+                )
+                .join("، ") || "لا توجد حساسية مسجلة بدرجة شديدة"}
+            </Text>
           </View>
           <Text style={styles.fieldHeading}>
             الأدوية أو المواد الفعالة المسببة
@@ -418,6 +436,28 @@ const styles = StyleSheet.create({
     color: palette.navy,
     fontSize: 11,
     fontWeight: "700",
+    textAlign: "right",
+    marginTop: 4,
+  },
+  criticalBox: {
+    backgroundColor: palette.paleRed,
+    borderColor: "#E8AEB6",
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: 10,
+    marginTop: 10,
+  },
+  criticalTitle: {
+    color: palette.red,
+    fontSize: 12,
+    fontWeight: "900",
+    textAlign: "right",
+  },
+  criticalText: {
+    color: palette.navy,
+    fontSize: 13,
+    fontWeight: "800",
+    lineHeight: 20,
     textAlign: "right",
     marginTop: 4,
   },

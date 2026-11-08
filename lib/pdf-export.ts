@@ -38,6 +38,21 @@ function recordRow(record: AllergyRecord) {
     ? "—"
     : date.toLocaleDateString("ar");
 
+  const notes = [
+    record.notes,
+    record.kind === "surgery" && record.hospital
+      ? `المستشفى: ${record.hospital}`
+      : "",
+    record.kind === "surgery" && record.anesthesiaType
+      ? `التخدير: ${record.anesthesiaType}`
+      : "",
+    record.kind === "surgery" && record.anesthesiaNotes
+      ? `ملاحظات التخدير: ${record.anesthesiaNotes}`
+      : "",
+  ]
+    .filter(Boolean)
+    .join(" — ");
+
   return `
     <tr>
       <td>${escapeHtml(labelFor(record.kind))}</td>
@@ -48,7 +63,7 @@ function recordRow(record: AllergyRecord) {
       <td>${escapeHtml(record.frequency || "—")}</td>
       <td>${escapeHtml(record.symptoms || "—")}</td>
       <td>${escapeHtml(record.severity || "—")}</td>
-      <td>${escapeHtml(record.notes || "—")}</td>
+      <td>${escapeHtml(notes || "—")}</td>
       <td>${escapeHtml(record.eventDate || displayDate)}</td>
     </tr>`;
 }

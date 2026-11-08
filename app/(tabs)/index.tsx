@@ -79,6 +79,13 @@ export default function HomeScreen() {
   ).length;
   const medicines = records.filter((r) => r.kind === "medicine").length;
   const chronic = records.filter((r) => r.kind === "chronic-condition").length;
+  const severeAllergies = records.filter(
+    (r) =>
+      (r.kind === "medicine-allergy" ||
+        r.kind === "food-allergy" ||
+        r.kind === "other-allergy") &&
+      r.severity === "شديدة",
+  );
 
   return (
     <ScreenContainer
@@ -117,6 +124,41 @@ export default function HomeScreen() {
             </Text>
           </Pressable>
         </View>
+
+        <Pressable
+          onPress={() => router.push("/(tabs)/emergency" as any)}
+          style={({ pressed }) => [
+            styles.emergencyCard,
+            pressed && styles.pressed,
+          ]}
+        >
+          <View style={styles.emergencyHeader}>
+            <Text style={styles.emergencyTitle}>بطاقة الطوارئ السريعة</Text>
+            <Text style={styles.emergencyIcon}>⚠</Text>
+          </View>
+          <View style={styles.emergencyGrid}>
+            <View style={styles.emergencyItem}>
+              <Text style={styles.emergencyLabel}>فصيلة الدم</Text>
+              <Text style={styles.emergencyValue}>
+                {activePatient?.bloodType?.trim() || "غير مسجلة"}
+              </Text>
+            </View>
+            <View style={styles.emergencyItem}>
+              <Text style={styles.emergencyLabel}>حساسيات حرجة</Text>
+              <Text style={styles.emergencyValue}>
+                {severeAllergies.length || "لا يوجد"}
+              </Text>
+            </View>
+          </View>
+          <Text style={styles.emergencyContact}>
+            جهة الطوارئ: {activePatient?.emergencyContact || "غير مسجلة"}
+          </Text>
+          {severeAllergies.length > 0 ? (
+            <Text style={styles.emergencyWarning}>
+              {severeAllergies.map((item) => item.name).join("، ")}
+            </Text>
+          ) : null}
+        </Pressable>
 
         <View style={styles.statsRow}>
           <Stat value={allergies} label="حساسيات" tint={C.red} />
@@ -223,6 +265,55 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   switchText: { color: "#FFF", fontSize: 15, fontWeight: "900" },
+  emergencyCard: {
+    backgroundColor: C.redSoft,
+    borderColor: "#E4AAB2",
+    borderWidth: 2,
+    borderRadius: 22,
+    padding: 18,
+    marginBottom: 16,
+  },
+  emergencyHeader: {
+    flexDirection: "row-reverse",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  emergencyTitle: { color: C.red, fontSize: 20, fontWeight: "900" },
+  emergencyIcon: { color: C.red, fontSize: 25, fontWeight: "900" },
+  emergencyGrid: { flexDirection: "row-reverse", gap: 10, marginTop: 14 },
+  emergencyItem: {
+    flex: 1,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 14,
+    padding: 12,
+  },
+  emergencyLabel: {
+    color: C.muted,
+    fontSize: 13,
+    fontWeight: "800",
+    textAlign: "right",
+  },
+  emergencyValue: {
+    color: C.navy,
+    fontSize: 20,
+    fontWeight: "900",
+    textAlign: "right",
+    marginTop: 4,
+  },
+  emergencyContact: {
+    color: C.navy,
+    fontSize: 15,
+    fontWeight: "800",
+    textAlign: "right",
+    marginTop: 12,
+  },
+  emergencyWarning: {
+    color: C.red,
+    fontSize: 15,
+    fontWeight: "900",
+    textAlign: "right",
+    marginTop: 8,
+  },
   statsRow: { flexDirection: "row-reverse", gap: 10, marginBottom: 22 },
   stat: {
     flex: 1,

@@ -36,6 +36,10 @@ export type AllergyRecord = {
   severity?: Severity;
   notes?: string;
   eventDate?: string;
+  hospital?: string;
+  anesthesiaType?: string;
+  anesthesiaNotes?: string;
+  attachmentUris?: string[];
   date: string;
   updatedAt?: string;
 };
@@ -153,6 +157,20 @@ function normalizeRecords(value: unknown): AllergyRecord[] {
             : undefined,
         notes: typeof record.notes === "string" ? record.notes : "",
         eventDate: typeof record.eventDate === "string" ? record.eventDate : "",
+        hospital: typeof record.hospital === "string" ? record.hospital : "",
+        anesthesiaType:
+          typeof record.anesthesiaType === "string"
+            ? record.anesthesiaType
+            : "",
+        anesthesiaNotes:
+          typeof record.anesthesiaNotes === "string"
+            ? record.anesthesiaNotes
+            : "",
+        attachmentUris: Array.isArray(record.attachmentUris)
+          ? record.attachmentUris.filter(
+              (uri): uri is string => typeof uri === "string",
+            )
+          : [],
         date: typeof record.date === "string" ? record.date : now,
         updatedAt:
           typeof record.updatedAt === "string" ? record.updatedAt : now,
