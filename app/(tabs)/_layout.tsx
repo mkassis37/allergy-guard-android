@@ -38,6 +38,15 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="emergency"
+        options={{
+          title: "الطوارئ",
+          tabBarIcon: ({ color }) => (
+            <IconSymbol size={23} name="cross.case.fill" color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="patients"
         options={{
           title: "المرضى",
@@ -52,15 +61,6 @@ export default function TabLayout() {
           title: "السجلات",
           tabBarIcon: ({ color }) => (
             <IconSymbol size={23} name="list.bullet" color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="emergency"
-        options={{
-          title: "الطوارئ",
-          tabBarIcon: ({ color }) => (
-            <IconSymbol size={23} name="cross.case.fill" color={color} />
           ),
         }}
       />

@@ -1,9 +1,12 @@
 import "../global.css";
+import { useState } from "react";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import {
   I18nManager,
+  Linking,
   Pressable,
+  ScrollView,
   View,
   Text,
   useColorScheme as useSystemColorScheme,
@@ -11,6 +14,7 @@ import {
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { ThemeProvider } from "@/lib/theme-provider";
 import { AllergyProvider } from "@/lib/allergy-store";
+import { useAllergy } from "@/lib/allergy-store";
 import { useGithubUpdater } from "@/hooks/use-github-updater";
 import { useBiometricLock } from "@/lib/biometric-lock";
 
@@ -45,6 +49,14 @@ function UpdateWatcher() {
 
 function BiometricGate() {
   const { locked, unlock } = useBiometricLock();
+  const { profile, records } = useAllergy();
+  const [showCard, setShowCard] = useState(false);
+  const critical = records.filter(
+    (record) =>
+      ["medicine-allergy", "food-allergy", "other-allergy"].includes(
+        record.kind,
+      ) && record.severity === "شديدة",
+  );
   if (!locked) return null;
   return (
     <View
@@ -98,6 +110,108 @@ function BiometricGate() {
           فتح التطبيق
         </Text>
       </Pressable>
+      <Pressable
+        onPress={() => setShowCard((value) => !value)}
+        style={{
+          marginTop: 14,
+          minHeight: 48,
+          minWidth: 220,
+          borderRadius: 16,
+          borderWidth: 2,
+          borderColor: "#B23A48",
+          alignItems: "center",
+          justifyContent: "center",
+          paddingHorizontal: 18,
+        }}
+      >
+        <Text style={{ color: "#B23A48", fontSize: 16, fontWeight: "900" }}>
+          {showCard ? "إخفاء بطاقة الطوارئ" : "عرض بطاقة الطوارئ"}
+        </Text>
+      </Pressable>
+      {showCard ? (
+        <ScrollView
+          style={{ width: "100%", marginTop: 18, maxHeight: 230 }}
+          contentContainerStyle={{
+            backgroundColor: "#FFF1F2",
+            borderRadius: 16,
+            padding: 16,
+          }}
+        >
+          <Text
+            style={{
+              color: "#B23A48",
+              fontSize: 19,
+              fontWeight: "900",
+              textAlign: "right",
+            }}
+          >
+            بطاقة طوارئ مختصرة
+          </Text>
+          <Text
+            style={{
+              color: "#17324D",
+              fontSize: 16,
+              fontWeight: "800",
+              textAlign: "right",
+              marginTop: 8,
+            }}
+          >
+            الاسم: {profile.fullName || "غير مسجل"}
+          </Text>
+          <Text
+            style={{
+              color: "#17324D",
+              fontSize: 16,
+              fontWeight: "800",
+              textAlign: "right",
+              marginTop: 5,
+            }}
+          >
+            فصيلة الدم: {profile.bloodType || "غير مسجلة"}
+          </Text>
+          <Text
+            style={{
+              color: "#B23A48",
+              fontSize: 16,
+              fontWeight: "900",
+              textAlign: "right",
+              marginTop: 5,
+            }}
+          >
+            الحساسيات الشديدة:{" "}
+            {critical.map((item) => item.name).join("، ") || "لا توجد مسجلة"}
+          </Text>
+          <Text
+            style={{
+              color: "#637787",
+              fontSize: 14,
+              textAlign: "right",
+              marginTop: 5,
+            }}
+          >
+            جهة الطوارئ: {profile.emergencyContact || "غير مسجلة"}
+          </Text>
+          {profile.emergencyContact ? (
+            <Pressable
+              onPress={() =>
+                void Linking.openURL(`tel:${profile.emergencyContact}`)
+              }
+              style={{
+                marginTop: 10,
+                backgroundColor: "#B23A48",
+                borderRadius: 12,
+                minHeight: 44,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Text style={{ color: "#FFF", fontSize: 15, fontWeight: "900" }}>
+                اتصال بجهة الطوارئ
+              </Text>
+            </Pressable>
+          ) : null}
+        </ScrollView>
+      ) : null}
     </View>
   );
 }

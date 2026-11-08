@@ -1,6 +1,7 @@
 import { useState } from "react";
 import {
   Alert,
+  Linking,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -176,6 +177,19 @@ export default function EmergencyScreen() {
               </Text>
             </View>
           </View>
+          {profile.emergencyContact ? (
+            <Pressable
+              onPress={() =>
+                void Linking.openURL(`tel:${profile.emergencyContact}`)
+              }
+              style={({ pressed }) => [
+                styles.callEmergency,
+                pressed && { opacity: 0.8 },
+              ]}
+            >
+              <Text style={styles.callEmergencyText}>اتصال بجهة الطوارئ</Text>
+            </Pressable>
+          ) : null}
           <View style={styles.criticalBox}>
             <Text style={styles.criticalTitle}>الحساسيات الحرجة</Text>
             <Text style={styles.criticalText}>
@@ -439,6 +453,15 @@ const styles = StyleSheet.create({
     textAlign: "right",
     marginTop: 4,
   },
+  callEmergency: {
+    backgroundColor: palette.red,
+    borderRadius: 11,
+    minHeight: 46,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 10,
+  },
+  callEmergencyText: { color: "#FFF", fontSize: 15, fontWeight: "900" },
   criticalBox: {
     backgroundColor: palette.paleRed,
     borderColor: "#E8AEB6",
