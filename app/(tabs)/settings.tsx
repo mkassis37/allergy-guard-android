@@ -8,6 +8,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from "react-native";
 import { ScreenContainer } from "@/components/screen-container";
@@ -18,6 +19,11 @@ import {
   getBiometricLockEnabled,
   setBiometricLockEnabled,
 } from "@/lib/biometric-lock";
+import {
+  DEFAULT_GOVERNMENT_EMERGENCY_NUMBER,
+  getGovernmentEmergencyNumber,
+  setGovernmentEmergencyNumber,
+} from "@/lib/emergency-settings";
 
 const palette = {
   navy: "#17324D",
@@ -50,6 +56,13 @@ export default function SettingsScreen() {
   const [checking, setChecking] = useState(false);
   const [backupSheetVisible, setBackupSheetVisible] = useState(false);
   const [biometricEnabled, setBiometricEnabled] = useState(false);
+  const [governmentNumber, setGovernmentNumber] = useState(
+    DEFAULT_GOVERNMENT_EMERGENCY_NUMBER,
+  );
+  const [governmentNumberDraft, setGovernmentNumberDraft] = useState(
+    DEFAULT_GOVERNMENT_EMERGENCY_NUMBER,
+  );
+  const [governmentNumberVisible, setGovernmentNumberVisible] = useState(false);
   const version = Constants.expoConfig?.version ?? "غير معروف";
 
   useEffect(() => {
@@ -57,6 +70,24 @@ export default function SettingsScreen() {
       .then(setBiometricEnabled)
       .catch(() => setBiometricEnabled(false));
   }, []);
+
+  useEffect(() => {
+    getGovernmentEmergencyNumber()
+      .then((value) => {
+        setGovernmentNumber(value);
+        setGovernmentNumberDraft(value);
+      })
+      .catch(() => undefined);
+  }, []);
+
+  const saveGovernmentNumber = async () => {
+    await setGovernmentEmergencyNumber(governmentNumberDraft);
+    const saved = await getGovernmentEmergencyNumber();
+    setGovernmentNumber(saved);
+    setGovernmentNumberDraft(saved);
+    setGovernmentNumberVisible(false);
+    Alert.alert("تم الحفظ", `رقم الطوارئ الحكومي: ${saved}`);
+  };
 
   const toggleBiometricLock = async () => {
     const next = !biometricEnabled;
@@ -202,6 +233,64 @@ export default function SettingsScreen() {
             </Text>
           </View>
         </Pressable>
+
+        <Pressable
+          onPress={() => setGovernmentNumberVisible(true)}
+          style={({ pressed }) => [
+            styles.settingRow,
+            pressed && styles.buttonPressed,
+          ]}
+        >
+          <Text style={styles.rowChevron}>‹</Text>
+          <View style={styles.rowCopy}>
+            <Text style={styles.rowTitle}>رقم الطوارئ الحكومي</Text>
+            <Text style={styles.rowSubtitle}>
+              {governmentNumber} — قابل للتعديل حسب الدولة
+            </Text>
+          </View>
+          <View style={styles.rowIcon}>
+            <Text style={styles.rowIconText}>☎</Text>
+          </View>
+        </Pressable>
+
+        <Modal
+          visible={governmentNumberVisible}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setGovernmentNumberVisible(false)}
+        >
+          <View style={styles.numberModalRoot}>
+            <View style={styles.numberModalCard}>
+              <Text style={styles.numberModalTitle}>رقم الطوارئ الحكومي</Text>
+              <Text style={styles.numberModalHint}>
+                مثال: 911 أو 112. سيظهر في بطاقة الطوارئ وشاشة القفل.
+              </Text>
+              <TextInput
+                value={governmentNumberDraft}
+                onChangeText={setGovernmentNumberDraft}
+                keyboardType="phone-pad"
+                textAlign="right"
+                placeholder="911"
+                placeholderTextColor="#98A7B1"
+                style={styles.numberInput}
+              />
+              <View style={styles.numberModalActions}>
+                <Pressable
+                  onPress={() => setGovernmentNumberVisible(false)}
+                  style={styles.numberCancel}
+                >
+                  <Text style={styles.numberCancelText}>إلغاء</Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => void saveGovernmentNumber()}
+                  style={styles.numberSave}
+                >
+                  <Text style={styles.numberSaveText}>حفظ الرقم</Text>
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        </Modal>
 
         <Modal
           visible={backupSheetVisible}
@@ -492,6 +581,61 @@ const styles = StyleSheet.create({
     backgroundColor: palette.tealSoft,
   },
   rowIconText: { color: palette.teal, fontSize: 28, fontWeight: "900" },
+  numberModalRoot: {
+    flex: 1,
+    backgroundColor: "rgba(23, 50, 77, 0.42)",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 22,
+  },
+  numberModalCard: {
+    width: "100%",
+    backgroundColor: palette.card,
+    borderRadius: 22,
+    padding: 20,
+  },
+  numberModalTitle: {
+    color: palette.navy,
+    fontSize: 21,
+    fontWeight: "900",
+    textAlign: "right",
+  },
+  numberModalHint: {
+    color: palette.muted,
+    fontSize: 13,
+    lineHeight: 21,
+    textAlign: "right",
+    marginTop: 8,
+  },
+  numberInput: {
+    borderColor: palette.line,
+    borderWidth: 1,
+    borderRadius: 12,
+    minHeight: 50,
+    paddingHorizontal: 14,
+    color: palette.navy,
+    fontSize: 18,
+    marginTop: 14,
+  },
+  numberModalActions: { flexDirection: "row", gap: 10, marginTop: 16 },
+  numberCancel: {
+    flex: 1,
+    minHeight: 48,
+    borderRadius: 12,
+    backgroundColor: "#EEF2F4",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  numberCancelText: { color: palette.muted, fontSize: 15, fontWeight: "900" },
+  numberSave: {
+    flex: 1,
+    minHeight: 48,
+    borderRadius: 12,
+    backgroundColor: palette.teal,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  numberSaveText: { color: "#FFF", fontSize: 15, fontWeight: "900" },
   modalRoot: { flex: 1, justifyContent: "flex-end" },
   modalBackdrop: {
     ...StyleSheet.absoluteFillObject,

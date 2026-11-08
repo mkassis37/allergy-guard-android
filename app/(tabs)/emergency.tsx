@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Alert,
   Linking,
@@ -17,6 +17,7 @@ import { ScreenContainer } from "@/components/screen-container";
 import { FormActionBar } from "@/components/form-action-bar";
 import { useAllergy } from "@/lib/allergy-store";
 import { exportBackup, importJsonBackup } from "@/lib/backup";
+import { getGovernmentEmergencyNumber } from "@/lib/emergency-settings";
 
 const palette = {
   navy: "#17324D",
@@ -32,6 +33,12 @@ const palette = {
 export default function EmergencyScreen() {
   const { records, profile, saveProfile, replaceData } = useAllergy();
   const [editing, setEditing] = useState(false);
+  const [governmentNumber, setGovernmentNumber] = useState("911");
+  useEffect(() => {
+    getGovernmentEmergencyNumber()
+      .then(setGovernmentNumber)
+      .catch(() => undefined);
+  }, []);
   const allergies = records.filter(
     (item) =>
       item.kind === "medicine-allergy" ||
@@ -190,6 +197,20 @@ export default function EmergencyScreen() {
               <Text style={styles.callEmergencyText}>اتصال بجهة الطوارئ</Text>
             </Pressable>
           ) : null}
+          <Text style={styles.governmentNumber}>
+            الطوارئ الحكومية: {governmentNumber}
+          </Text>
+          <Pressable
+            onPress={() => void Linking.openURL(`tel:${governmentNumber}`)}
+            style={({ pressed }) => [
+              styles.governmentCall,
+              pressed && { opacity: 0.8 },
+            ]}
+          >
+            <Text style={styles.governmentCallText}>
+              اتصال بالطوارئ الحكومية
+            </Text>
+          </Pressable>
           <View style={styles.criticalBox}>
             <Text style={styles.criticalTitle}>الحساسيات الحرجة</Text>
             <Text style={styles.criticalText}>
@@ -462,6 +483,22 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   callEmergencyText: { color: "#FFF", fontSize: 15, fontWeight: "900" },
+  governmentNumber: {
+    color: palette.muted,
+    fontSize: 14,
+    fontWeight: "800",
+    textAlign: "right",
+    marginTop: 10,
+  },
+  governmentCall: {
+    backgroundColor: palette.navy,
+    borderRadius: 11,
+    minHeight: 46,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 8,
+  },
+  governmentCallText: { color: "#FFF", fontSize: 15, fontWeight: "900" },
   criticalBox: {
     backgroundColor: palette.paleRed,
     borderColor: "#E8AEB6",

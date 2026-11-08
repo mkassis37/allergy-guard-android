@@ -1,5 +1,5 @@
 import "../global.css";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import {
@@ -17,6 +17,7 @@ import { AllergyProvider } from "@/lib/allergy-store";
 import { useAllergy } from "@/lib/allergy-store";
 import { useGithubUpdater } from "@/hooks/use-github-updater";
 import { useBiometricLock } from "@/lib/biometric-lock";
+import { getGovernmentEmergencyNumber } from "@/lib/emergency-settings";
 
 try {
   I18nManager.allowRTL(true);
@@ -51,6 +52,13 @@ function BiometricGate() {
   const { locked, unlock } = useBiometricLock();
   const { profile, records } = useAllergy();
   const [showCard, setShowCard] = useState(false);
+  const [showFirstAid, setShowFirstAid] = useState(false);
+  const [governmentNumber, setGovernmentNumber] = useState("911");
+  useEffect(() => {
+    getGovernmentEmergencyNumber()
+      .then(setGovernmentNumber)
+      .catch(() => undefined);
+  }, []);
   const critical = records.filter(
     (record) =>
       ["medicine-allergy", "food-allergy", "other-allergy"].includes(
@@ -191,6 +199,31 @@ function BiometricGate() {
           >
             جهة الطوارئ: {profile.emergencyContact || "غير مسجلة"}
           </Text>
+          <Text
+            style={{
+              color: "#637787",
+              fontSize: 14,
+              textAlign: "right",
+              marginTop: 5,
+            }}
+          >
+            رقم الطوارئ الحكومي: {governmentNumber}
+          </Text>
+          <Pressable
+            onPress={() => void Linking.openURL(`tel:${governmentNumber}`)}
+            style={{
+              marginTop: 10,
+              backgroundColor: "#B23A48",
+              borderRadius: 12,
+              minHeight: 44,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Text style={{ color: "#FFF", fontSize: 15, fontWeight: "900" }}>
+              اتصال بالطوارئ الحكومية
+            </Text>
+          </Pressable>
           {profile.emergencyContact ? (
             <Pressable
               onPress={() =>
@@ -211,6 +244,50 @@ function BiometricGate() {
             </Pressable>
           ) : null}
         </ScrollView>
+      ) : null}
+      <Pressable
+        onPress={() => setShowFirstAid((value) => !value)}
+        style={{
+          marginTop: 14,
+          minHeight: 52,
+          width: "100%",
+          borderRadius: 16,
+          backgroundColor: "#F59E0B",
+          alignItems: "center",
+          justifyContent: "center",
+          paddingHorizontal: 18,
+        }}
+      >
+        <Text style={{ color: "#17324D", fontSize: 17, fontWeight: "900" }}>
+          {showFirstAid
+            ? "إخفاء تعليمات الإسعاف الأولي"
+            : "تعليمات الإسعاف الأولي"}
+        </Text>
+      </Pressable>
+      {showFirstAid ? (
+        <View
+          style={{
+            width: "100%",
+            marginTop: 12,
+            backgroundColor: "#FFF7E4",
+            borderRadius: 16,
+            padding: 15,
+          }}
+        >
+          <Text
+            style={{
+              color: "#765500",
+              fontSize: 15,
+              lineHeight: 23,
+              textAlign: "right",
+            }}
+          >
+            • اتصل بالطوارئ فورًا واذكر وجود حساسية شديدة.{"\n"}• لا تعطِ المصاب
+            دواءً أو طعامًا قبل مراجعة بطاقة الحساسية.{"\n"}• إذا كان المصاب
+            فاقد الوعي، ضعه على جانبه ولا تتركه وحده.{"\n"}• اتبع تعليمات موظف
+            الطوارئ ولا تؤخر طلب المساعدة.
+          </Text>
+        </View>
       ) : null}
     </View>
   );
