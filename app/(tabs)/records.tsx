@@ -15,6 +15,7 @@ import {
   ToastAndroid,
   TouchableOpacity,
   View,
+  Linking,
 } from "react-native";
 import { ScreenContainer } from "@/components/screen-container";
 import {
@@ -685,6 +686,23 @@ export default function RecordsScreen() {
                   {item.purpose ? (
                     <Text style={styles.detail}>التفاصيل: {item.purpose}</Text>
                   ) : null}
+                  {item.kind === "surgery" &&
+                  (item.hospital || item.anesthesiaType) ? (
+                    <Text style={styles.detail}>
+                      {[
+                        item.hospital && `المستشفى: ${item.hospital}`,
+                        item.anesthesiaType &&
+                          `التخدير: ${item.anesthesiaType}`,
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </Text>
+                  ) : null}
+                  {item.attachmentUris?.length ? (
+                    <Text style={styles.attachmentSummary}>
+                      📎 {item.attachmentUris.length} مرفق طبي محفوظ محليًا
+                    </Text>
+                  ) : null}
                   {item.symptoms ? (
                     <Text style={styles.detail}>
                       الأعراض: {item.symptoms}
@@ -783,6 +801,37 @@ export default function RecordsScreen() {
                     label="التاريخ المرتبط بالسجل"
                     value={formatArabicDate(viewRecord.eventDate)}
                   />
+                ) : null}
+                {viewRecord.kind === "surgery" && viewRecord.hospital ? (
+                  <Detail label="المستشفى" value={viewRecord.hospital} />
+                ) : null}
+                {viewRecord.kind === "surgery" && viewRecord.anesthesiaType ? (
+                  <Detail
+                    label="نوع التخدير"
+                    value={viewRecord.anesthesiaType}
+                  />
+                ) : null}
+                {viewRecord.kind === "surgery" && viewRecord.anesthesiaNotes ? (
+                  <Detail
+                    label="ملاحظات التخدير والمضاعفات"
+                    value={viewRecord.anesthesiaNotes}
+                  />
+                ) : null}
+                {viewRecord.attachmentUris?.length ? (
+                  <View style={styles.attachmentsBlock}>
+                    <Text style={styles.attachmentsTitle}>المرفقات الطبية</Text>
+                    {viewRecord.attachmentUris.map((uri, index) => (
+                      <Pressable
+                        key={`${uri}-${index}`}
+                        onPress={() => void Linking.openURL(uri)}
+                        style={styles.attachmentLink}
+                      >
+                        <Text style={styles.attachmentLinkText}>
+                          فتح المرفق {index + 1}
+                        </Text>
+                      </Pressable>
+                    ))}
+                  </View>
                 ) : null}
                 {viewRecord.notes ? (
                   <Detail label="ملاحظات" value={viewRecord.notes} />
@@ -1532,6 +1581,38 @@ const styles = StyleSheet.create({
     textAlign: "right",
     marginTop: 4,
     lineHeight: 25,
+  },
+  attachmentSummary: {
+    color: C.blue,
+    fontSize: 13,
+    fontWeight: "800",
+    textAlign: "right",
+    marginTop: 5,
+  },
+  attachmentsBlock: {
+    backgroundColor: C.blueSoft,
+    borderRadius: 14,
+    padding: 12,
+    marginTop: 10,
+  },
+  attachmentsTitle: {
+    color: C.navy,
+    fontSize: 15,
+    fontWeight: "900",
+    textAlign: "right",
+    marginBottom: 7,
+  },
+  attachmentLink: {
+    backgroundColor: C.card,
+    borderRadius: 10,
+    padding: 10,
+    marginTop: 5,
+  },
+  attachmentLinkText: {
+    color: C.blue,
+    fontSize: 14,
+    fontWeight: "900",
+    textAlign: "right",
   },
   modalActions: { flexDirection: "row-reverse", gap: 10, marginTop: 10 },
   modalEdit: {

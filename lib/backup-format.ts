@@ -26,6 +26,10 @@ export type BackupRecord = {
   severity?: "خفيفة" | "متوسطة" | "شديدة";
   notes?: string;
   eventDate?: string;
+  hospital?: string;
+  anesthesiaType?: string;
+  anesthesiaNotes?: string;
+  attachmentUris?: string[];
   updatedAt?: string;
   date: string;
 };

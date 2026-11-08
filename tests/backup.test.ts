@@ -149,4 +149,25 @@ describe("local backup export and import", () => {
     expect(csv).toContain("حساسية أخرى");
     expect(csv).toContain("مرتان يوميًا");
   });
+
+  it("preserves surgery details and attachment count in exports", () => {
+    const surgery = {
+      id: "5",
+      kind: "surgery" as const,
+      name: "استئصال الزائدة",
+      eventDate: "2026-02-01",
+      hospital: "مستشفى المدينة",
+      anesthesiaType: "عام",
+      anesthesiaNotes: "تحمل جيد دون مضاعفات",
+      attachmentUris: ["file:///report.pdf"],
+      date: "2026-02-01T00:00:00.000Z",
+    };
+    const payload = makeBackupPayload(profile, [surgery]);
+    const restored = validateBackup(JSON.parse(JSON.stringify(payload)));
+    expect(restored.records[0].hospital).toBe("مستشفى المدينة");
+    expect(restored.records[0].anesthesiaType).toBe("عام");
+    expect(csvRows(payload)).toContain("مستشفى المدينة");
+    expect(csvRows(payload)).toContain("عام");
+    expect(csvRows(payload)).toContain(",1,");
+  });
 });

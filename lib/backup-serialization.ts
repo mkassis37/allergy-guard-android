@@ -31,6 +31,10 @@ export function csvRows(payload: BackupPayload) {
     "الشدة",
     "الملاحظات",
     "تاريخ الحدث",
+    "المستشفى",
+    "نوع التخدير",
+    "ملاحظات التخدير",
+    "عدد المرفقات",
     "تاريخ الإضافة",
   ];
   const rows = payload.records.map((record) => [
@@ -58,6 +62,10 @@ export function csvRows(payload: BackupPayload) {
     record.severity,
     record.notes,
     record.eventDate,
+    record.hospital,
+    record.anesthesiaType,
+    record.anesthesiaNotes,
+    record.attachmentUris?.length ?? 0,
     record.date,
   ]);
   return (
