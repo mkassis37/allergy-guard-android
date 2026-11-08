@@ -168,18 +168,18 @@ export default function HomeScreen() {
 
         <Text style={styles.sectionTitle}>وصول سريع</Text>
         <ActionCard
+          title="بطاقة الطوارئ"
+          description="أهم المعلومات للطبيب والمسعف خلال ثوانٍ"
+          background={C.redSoft}
+          color={C.red}
+          onPress={() => router.push("/(tabs)/emergency" as any)}
+        />
+        <ActionCard
           title="السجلات الصحية"
           description="إضافة، عرض، تعديل، حذف، بحث وتصدير PDF"
           background={C.tealSoft}
           color={C.teal}
           onPress={() => router.push("/(tabs)/records" as any)}
-        />
-        <ActionCard
-          title="بطاقة الطوارئ"
-          description="معلومات مهمة وسريعة للمريض المحدد"
-          background={C.redSoft}
-          color={C.red}
-          onPress={() => router.push("/(tabs)/emergency" as any)}
         />
         <ActionCard
           title="المرضى وأفراد العائلة"
