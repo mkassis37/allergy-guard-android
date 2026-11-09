@@ -26,14 +26,14 @@ import {
 } from "@/lib/emergency-settings";
 
 const palette = {
-  navy: "#17324D",
-  teal: "#087E8B",
-  tealSoft: "#EAF6F7",
+  navy: "#173B6C",
+  teal: "#2C6EBD",
+  tealSoft: "#EEF5FF",
   card: "#FFFFFF",
-  line: "#D7E5E8",
-  muted: "#637787",
-  bg: "#F5F9FA",
-  blue: "#2F67A8",
+  line: "#E1E7F0",
+  muted: "#66758A",
+  bg: "#F6F8FC",
+  blue: "#2C6EBD",
   blueSoft: "#EEF5FF",
 };
 

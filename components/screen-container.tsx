@@ -49,20 +49,9 @@ export function ScreenContainer({
   const paddingHorizontal = className?.includes("px-5") ? 20 : 0;
 
   return (
-    <View
-      style={[
-        { flex: 1, backgroundColor: "#F5FAFB" },
-        style,
-      ]}
-      {...props}
-    >
-      <SafeAreaView
-        edges={edges}
-        style={{ flex: 1 }}
-      >
-        <View style={{ flex: 1, paddingHorizontal }}>
-          {children}
-        </View>
+    <View style={[{ flex: 1, backgroundColor: "#F6F8FC" }, style]} {...props}>
+      <SafeAreaView edges={edges} style={{ flex: 1 }}>
+        <View style={{ flex: 1, paddingHorizontal }}>{children}</View>
       </SafeAreaView>
     </View>
   );

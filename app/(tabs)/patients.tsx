@@ -27,16 +27,16 @@ import {
 } from "@/lib/allergy-store";
 
 const C = {
-  navy: "#183B56",
-  teal: "#0B8793",
-  tealSoft: "#E8F6F7",
-  bg: "#F4F8FA",
+  navy: "#173B6C",
+  teal: "#2C6EBD",
+  tealSoft: "#EEF5FF",
+  bg: "#F6F8FC",
   card: "#FFFFFF",
-  line: "#D9E5EA",
-  muted: "#607484",
-  danger: "#B63A49",
-  dangerSoft: "#FFF0F2",
-  green: "#197A55",
+  line: "#E1E7F0",
+  muted: "#66758A",
+  danger: "#D95368",
+  dangerSoft: "#FFF0F3",
+  green: "#21835B",
 };
 
 function Input({
