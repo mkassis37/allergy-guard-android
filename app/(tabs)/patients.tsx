@@ -14,10 +14,7 @@ import {
   View,
 } from "react-native";
 import { ScreenContainer } from "@/components/screen-container";
-import {
-  DatePickerField,
-  formatArabicDate,
-} from "@/components/date-picker-field";
+import { DatePickerField } from "@/components/date-picker-field";
 import { FormActionBar } from "@/components/form-action-bar";
 import {
   emptyProfile,
@@ -88,6 +85,10 @@ export default function PatientsScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState<Profile>({ ...emptyProfile });
+  const [search, setSearch] = useState("");
+  const [sortMode, setSortMode] = useState<"name" | "updated">("updated");
+  const [menuPatient, setMenuPatient] = useState<Patient | null>(null);
+  const [detailPatient, setDetailPatient] = useState<Patient | null>(null);
 
   const activeName = useMemo(
     () =>
@@ -95,6 +96,50 @@ export default function PatientsScreen() {
       "لا يوجد مريض محدد",
     [patients, activePatientId],
   );
+
+  const visiblePatients = useMemo(() => {
+    const query = search.trim().toLocaleLowerCase();
+    return patients
+      .filter(
+        (patient) =>
+          !query || patient.fullName.toLocaleLowerCase().includes(query),
+      )
+      .sort((a, b) =>
+        sortMode === "name"
+          ? a.fullName.localeCompare(b.fullName, "ar")
+          : new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+      );
+  }, [patients, search, sortMode]);
+
+  const ageOf = (birthDate: string) => {
+    if (!birthDate) return "العمر غير مسجل";
+    const birth = new Date(birthDate);
+    if (Number.isNaN(birth.getTime())) return "العمر غير مسجل";
+    const today = new Date();
+    let age = today.getFullYear() - birth.getFullYear();
+    const beforeBirthday =
+      today.getMonth() < birth.getMonth() ||
+      (today.getMonth() === birth.getMonth() &&
+        today.getDate() < birth.getDate());
+    if (beforeBirthday) age -= 1;
+    return `${Math.max(age, 0)} سنة`;
+  };
+
+  const summaryFor = (patient: Patient) => ({
+    allergies: patient.records.filter((record) =>
+      ["medicine-allergy", "food-allergy", "other-allergy"].includes(
+        record.kind,
+      ),
+    ).length,
+    medicines: patient.records.filter((record) =>
+      ["medicine", "medicine-tolerated"].includes(record.kind),
+    ).length,
+    conditions: patient.records.filter(
+      (record) => record.kind === "chronic-condition",
+    ).length,
+    surgeries: patient.records.filter((record) => record.kind === "surgery")
+      .length,
+  });
 
   const openAdd = () => {
     setEditingId(null);
@@ -178,6 +223,56 @@ export default function PatientsScreen() {
           <Text style={styles.activeName}>{activeName}</Text>
         </View>
 
+        <View style={styles.searchBox}>
+          <Text style={styles.searchIcon}>⌕</Text>
+          <TextInput
+            value={search}
+            onChangeText={setSearch}
+            placeholder="ابحث عن مريض بالاسم"
+            placeholderTextColor={C.muted}
+            style={styles.searchInput}
+            textAlign="right"
+            returnKeyType="search"
+          />
+        </View>
+        <View style={styles.toolbar}>
+          <Text style={styles.resultsCount}>{visiblePatients.length} ملف</Text>
+          <View style={styles.sortGroup}>
+            <Pressable
+              onPress={() => setSortMode("updated")}
+              style={[
+                styles.sortButton,
+                sortMode === "updated" && styles.sortButtonActive,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.sortText,
+                  sortMode === "updated" && styles.sortTextActive,
+                ]}
+              >
+                آخر تحديث
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={() => setSortMode("name")}
+              style={[
+                styles.sortButton,
+                sortMode === "name" && styles.sortButtonActive,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.sortText,
+                  sortMode === "name" && styles.sortTextActive,
+                ]}
+              >
+                أبجدي
+              </Text>
+            </Pressable>
+          </View>
+        </View>
+
         {patients.length === 0 ? (
           <View style={styles.emptyCard}>
             <Text style={styles.emptyTitle}>لا يوجد مرضى بعد</Text>
@@ -189,16 +284,27 @@ export default function PatientsScreen() {
               <Text style={styles.emptyButtonText}>إضافة أول مريض</Text>
             </Pressable>
           </View>
+        ) : visiblePatients.length === 0 ? (
+          <View style={styles.emptyCard}>
+            <Text style={styles.emptyTitle}>لا توجد نتائج</Text>
+            <Text style={styles.emptyText}>
+              جرّب البحث باسم مختلف أو امسح كلمة البحث.
+            </Text>
+          </View>
         ) : (
-          patients.map((patient) => {
+          visiblePatients.map((patient) => {
             const active = patient.id === activePatientId;
+            const summary = summaryFor(patient);
             return (
               <View
                 key={patient.id}
                 style={[styles.patientCard, active && styles.patientCardActive]}
               >
                 <Pressable
-                  onPress={() => selectPatient(patient.id)}
+                  onPress={() => {
+                    selectPatient(patient.id);
+                    setDetailPatient(patient);
+                  }}
                   style={styles.patientMain}
                 >
                   <View style={[styles.avatar, active && styles.avatarActive]}>
@@ -221,32 +327,37 @@ export default function PatientsScreen() {
                       </Text>
                     </View>
                     <Text style={styles.patientMeta}>
-                      {patient.bloodType ? `فصيلة ${patient.bloodType} · ` : ""}
-                      {patient.birthDate
-                        ? `${formatArabicDate(patient.birthDate)} · `
-                        : ""}
+                      {ageOf(patient.birthDate)} ·{" "}
+                      {patient.bloodType
+                        ? `فصيلة ${patient.bloodType}`
+                        : "الفصيلة غير مسجلة"}
+                    </Text>
+                    <Text style={styles.recordCount}>
                       {patient.records.length} سجل صحي
                     </Text>
                   </View>
                 </Pressable>
-                <View style={styles.actions}>
+                <View style={styles.cardBottom}>
+                  <View style={styles.summaryRow}>
+                    <Text style={styles.summaryText}>
+                      حساسيات {summary.allergies}
+                    </Text>
+                    <Text style={styles.summaryText}>
+                      أدوية {summary.medicines}
+                    </Text>
+                    <Text style={styles.summaryText}>
+                      أمراض {summary.conditions}
+                    </Text>
+                    <Text style={styles.summaryText}>
+                      عمليات {summary.surgeries}
+                    </Text>
+                  </View>
                   <Pressable
-                    onPress={() => selectPatient(patient.id)}
-                    style={styles.actionButton}
+                    onPress={() => setMenuPatient(patient)}
+                    style={styles.moreButton}
+                    hitSlop={8}
                   >
-                    <Text style={styles.selectText}>اختيار</Text>
-                  </Pressable>
-                  <Pressable
-                    onPress={() => openEdit(patient)}
-                    style={styles.actionButton}
-                  >
-                    <Text style={styles.editText}>تعديل</Text>
-                  </Pressable>
-                  <Pressable
-                    onPress={() => remove(patient)}
-                    style={[styles.actionButton, styles.deleteButton]}
-                  >
-                    <Text style={styles.deleteText}>حذف</Text>
+                    <Text style={styles.moreText}>⋮</Text>
                   </Pressable>
                 </View>
               </View>
@@ -254,6 +365,167 @@ export default function PatientsScreen() {
           })
         )}
       </ScrollView>
+
+      <Modal
+        visible={Boolean(detailPatient)}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setDetailPatient(null)}
+      >
+        <View style={styles.detailBackdrop}>
+          <View style={styles.detailSheet}>
+            <View style={styles.sheetHeader}>
+              <Pressable onPress={() => setDetailPatient(null)} hitSlop={12}>
+                <Text style={styles.close}>×</Text>
+              </Pressable>
+              <Text style={styles.sheetTitle}>الملف الصحي</Text>
+            </View>
+            {detailPatient ? (
+              <ScrollView
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={styles.detailContent}
+              >
+                <View style={styles.detailHero}>
+                  <View style={styles.detailAvatar}>
+                    <Text style={styles.detailAvatarText}>
+                      {detailPatient.fullName.trim()[0] || "م"}
+                    </Text>
+                  </View>
+                  <Text style={styles.detailName}>
+                    {detailPatient.fullName}
+                  </Text>
+                  <Text style={styles.detailMeta}>
+                    {ageOf(detailPatient.birthDate)} ·{" "}
+                    {detailPatient.bloodType || "فصيلة غير مسجلة"}
+                  </Text>
+                  {detailPatient.id === activePatientId ? (
+                    <Text style={styles.detailActive}>المريض النشط</Text>
+                  ) : null}
+                </View>
+                <View style={styles.detailStats}>
+                  {Object.entries(summaryFor(detailPatient)).map(
+                    ([label, value]) => (
+                      <View style={styles.detailStat} key={label}>
+                        <Text style={styles.detailStatValue}>{value}</Text>
+                        <Text style={styles.detailStatLabel}>
+                          {
+                            (
+                              {
+                                allergies: "حساسيات",
+                                medicines: "أدوية",
+                                conditions: "أمراض",
+                                surgeries: "عمليات",
+                              } as Record<string, string>
+                            )[label]
+                          }
+                        </Text>
+                      </View>
+                    ),
+                  )}
+                </View>
+                <Text style={styles.detailSection}>بيانات التواصل</Text>
+                <Text style={styles.detailLine}>
+                  الهاتف: {detailPatient.phone || "غير مسجل"}
+                </Text>
+                <Text style={styles.detailLine}>
+                  جهة الطوارئ: {detailPatient.emergencyContact || "غير مسجلة"}
+                </Text>
+                <Text style={styles.detailLine}>
+                  الطبيب / المنشأة: {detailPatient.doctor || "غير مسجل"}
+                </Text>
+                <Text style={styles.detailSection}>ملخص السجلات</Text>
+                {detailPatient.records.length === 0 ? (
+                  <Text style={styles.detailLine}>لا توجد سجلات صحية بعد.</Text>
+                ) : (
+                  detailPatient.records.slice(0, 8).map((record) => (
+                    <View style={styles.detailRecord} key={record.id}>
+                      <Text style={styles.detailRecordName}>{record.name}</Text>
+                      <Text style={styles.detailRecordKind}>
+                        {
+                          (
+                            {
+                              "medicine-allergy": "حساسية دوائية",
+                              "food-allergy": "حساسية غذائية",
+                              "other-allergy": "حساسية أخرى",
+                              "medicine-tolerated": "دواء متحمل",
+                              medicine: "دواء حالي",
+                              "chronic-condition": "مرض مزمن",
+                              surgery: "عملية",
+                              "medical-note": "ملاحظة",
+                            } as Record<string, string>
+                          )[record.kind]
+                        }
+                      </Text>
+                    </View>
+                  ))
+                )}
+                <Pressable
+                  onPress={() => {
+                    setDetailPatient(null);
+                    setMenuPatient(detailPatient);
+                  }}
+                  style={styles.detailManage}
+                >
+                  <Text style={styles.detailManageText}>
+                    إدارة بيانات المريض
+                  </Text>
+                </Pressable>
+              </ScrollView>
+            ) : null}
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        visible={Boolean(menuPatient)}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setMenuPatient(null)}
+      >
+        <Pressable
+          style={styles.menuBackdrop}
+          onPress={() => setMenuPatient(null)}
+        >
+          <View style={styles.menuSheet}>
+            <Text style={styles.menuTitle}>
+              {menuPatient?.fullName || "خيارات المريض"}
+            </Text>
+            <Pressable
+              onPress={() => {
+                if (menuPatient) setDetailPatient(menuPatient);
+                setMenuPatient(null);
+              }}
+              style={styles.menuItem}
+            >
+              <Text style={styles.menuItemText}>فتح الملف الصحي</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => {
+                if (menuPatient) openEdit(menuPatient);
+                setMenuPatient(null);
+              }}
+              style={styles.menuItem}
+            >
+              <Text style={styles.menuItemText}>تعديل بيانات المريض</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => {
+                if (menuPatient) remove(menuPatient);
+                setMenuPatient(null);
+              }}
+              style={[styles.menuItem, styles.menuDanger]}
+            >
+              <Text style={styles.deleteText}>حذف المريض وبياناته</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => setMenuPatient(null)}
+              style={styles.menuCancel}
+            >
+              <Text style={styles.cancelText}>إلغاء</Text>
+            </Pressable>
+          </View>
+        </Pressable>
+      </Modal>
 
       <Modal
         visible={modalVisible}
@@ -417,6 +689,169 @@ const styles = StyleSheet.create({
     textAlign: "right",
     marginTop: 3,
   },
+  searchBox: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    backgroundColor: C.card,
+    borderWidth: 1,
+    borderColor: C.line,
+    borderRadius: 15,
+    minHeight: 52,
+    paddingHorizontal: 13,
+    marginBottom: 10,
+  },
+  searchIcon: { color: C.teal, fontSize: 25, marginLeft: 8 },
+  searchInput: { flex: 1, color: C.navy, fontSize: 15, minHeight: 50 },
+  toolbar: {
+    flexDirection: "row-reverse",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 13,
+  },
+  resultsCount: { color: C.muted, fontSize: 13, fontWeight: "700" },
+  sortGroup: { flexDirection: "row-reverse", gap: 6 },
+  sortButton: {
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: C.line,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    backgroundColor: C.card,
+  },
+  sortButtonActive: { backgroundColor: C.navy, borderColor: C.navy },
+  sortText: { color: C.muted, fontSize: 12, fontWeight: "800" },
+  sortTextActive: { color: "#FFF" },
+  detailBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(16,28,45,0.5)",
+    justifyContent: "flex-end",
+  },
+  detailSheet: {
+    height: "88%",
+    backgroundColor: C.bg,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    overflow: "hidden",
+  },
+  detailContent: { padding: 20, paddingBottom: 34 },
+  detailHero: {
+    backgroundColor: C.navy,
+    borderRadius: 22,
+    alignItems: "center",
+    padding: 20,
+  },
+  detailAvatar: {
+    width: 62,
+    height: 62,
+    borderRadius: 22,
+    backgroundColor: "#2C5B92",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 8,
+  },
+  detailAvatarText: { color: "#FFF", fontSize: 27, fontWeight: "900" },
+  detailName: { color: "#FFF", fontSize: 24, fontWeight: "900" },
+  detailMeta: { color: "#D5E5FA", fontSize: 14, marginTop: 5 },
+  detailActive: {
+    color: "#C7F0DA",
+    backgroundColor: "#246D52",
+    borderRadius: 8,
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+    fontSize: 12,
+    fontWeight: "900",
+    marginTop: 9,
+  },
+  detailStats: { flexDirection: "row-reverse", gap: 7, marginTop: 12 },
+  detailStat: {
+    flex: 1,
+    backgroundColor: C.card,
+    borderRadius: 13,
+    borderWidth: 1,
+    borderColor: C.line,
+    alignItems: "center",
+    paddingVertical: 10,
+  },
+  detailStatValue: { color: C.navy, fontSize: 20, fontWeight: "900" },
+  detailStatLabel: {
+    color: C.muted,
+    fontSize: 10,
+    fontWeight: "800",
+    marginTop: 2,
+  },
+  detailSection: {
+    color: C.navy,
+    fontSize: 16,
+    fontWeight: "900",
+    textAlign: "right",
+    marginTop: 18,
+    marginBottom: 7,
+  },
+  detailLine: {
+    color: C.muted,
+    backgroundColor: C.card,
+    borderRadius: 10,
+    padding: 11,
+    fontSize: 13,
+    textAlign: "right",
+    marginBottom: 6,
+  },
+  detailRecord: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: C.card,
+    borderRadius: 10,
+    padding: 11,
+    marginBottom: 6,
+  },
+  detailRecordName: { color: C.navy, fontSize: 13, fontWeight: "900" },
+  detailRecordKind: { color: C.teal, fontSize: 11, fontWeight: "800" },
+  detailManage: {
+    backgroundColor: C.teal,
+    borderRadius: 13,
+    minHeight: 50,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 14,
+  },
+  detailManageText: { color: "#FFF", fontSize: 14, fontWeight: "900" },
+  menuBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(16,28,45,0.42)",
+    justifyContent: "flex-end",
+  },
+  menuSheet: {
+    backgroundColor: C.card,
+    borderTopLeftRadius: 26,
+    borderTopRightRadius: 26,
+    padding: 18,
+    paddingBottom: 28,
+  },
+  menuTitle: {
+    color: C.navy,
+    fontSize: 18,
+    fontWeight: "900",
+    textAlign: "right",
+    marginBottom: 10,
+  },
+  menuItem: {
+    minHeight: 52,
+    borderRadius: 13,
+    backgroundColor: "#F3F6FA",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 8,
+  },
+  menuDanger: { backgroundColor: C.dangerSoft },
+  menuItemText: { color: C.navy, fontSize: 14, fontWeight: "900" },
+  menuCancel: {
+    minHeight: 48,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 5,
+  },
+  cancelText: { color: C.muted, fontSize: 14, fontWeight: "800" },
   patientCard: {
     backgroundColor: C.card,
     borderRadius: 20,
@@ -467,6 +902,46 @@ const styles = StyleSheet.create({
     textAlign: "right",
     marginTop: 5,
   },
+  recordCount: {
+    color: C.teal,
+    fontSize: 12,
+    fontWeight: "900",
+    textAlign: "right",
+    marginTop: 5,
+  },
+  cardBottom: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: 8,
+    marginTop: 13,
+    paddingTop: 11,
+    borderTopColor: C.line,
+    borderTopWidth: 1,
+  },
+  summaryRow: {
+    flex: 1,
+    flexDirection: "row-reverse",
+    flexWrap: "wrap",
+    gap: 5,
+  },
+  summaryText: {
+    color: C.muted,
+    backgroundColor: "#F3F6FA",
+    borderRadius: 8,
+    paddingHorizontal: 7,
+    paddingVertical: 5,
+    fontSize: 11,
+    fontWeight: "800",
+  },
+  moreButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: "#F3F6FA",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  moreText: { color: C.navy, fontSize: 25, fontWeight: "900", lineHeight: 28 },
   actions: {
     flexDirection: "row-reverse",
     gap: 8,
