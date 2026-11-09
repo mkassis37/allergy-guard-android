@@ -4,86 +4,88 @@ import { ScreenContainer } from "@/components/screen-container";
 import { useAllergy } from "@/lib/allergy-store";
 
 const C = {
-  navy: "#183B56",
-  teal: "#0B8793",
-  tealSoft: "#E8F6F7",
-  bg: "#F4F8FA",
+  navy: "#173B6C",
+  navySoft: "#EAF1FC",
+  blue: "#2C6EBD",
+  blueSoft: "#EEF5FF",
+  coral: "#D95368",
+  coralSoft: "#FFF0F3",
+  cyan: "#0F9FAE",
+  cyanSoft: "#E9FAFB",
+  green: "#21835B",
+  greenSoft: "#EAF8F1",
+  bg: "#F6F8FC",
   card: "#FFFFFF",
-  line: "#D9E5EA",
-  muted: "#607484",
-  red: "#B63A49",
-  redSoft: "#FFF0F2",
-  green: "#197A55",
-  greenSoft: "#EAF7F1",
-  blue: "#3569A8",
-  blueSoft: "#EDF4FC",
+  line: "#E1E7F0",
+  muted: "#66758A",
 };
 
 function Stat({
   value,
   label,
   tint,
+  icon,
 }: {
   value: number;
   label: string;
   tint: string;
+  icon: string;
 }) {
   return (
     <View style={styles.stat}>
+      <View style={[styles.statIcon, { backgroundColor: `${tint}18` }]}>
+        <Text style={{ color: tint, fontSize: 16 }}>{icon}</Text>
+      </View>
       <Text style={[styles.statValue, { color: tint }]}>{value}</Text>
       <Text style={styles.statLabel}>{label}</Text>
     </View>
   );
 }
 
-function ActionCard({
+function QuickTile({
   title,
   description,
-  background,
   color,
+  background,
+  icon,
   onPress,
 }: {
   title: string;
   description: string;
-  background: string;
   color: string;
+  background: string;
+  icon: string;
   onPress: () => void;
 }) {
   return (
     <Pressable
       onPress={onPress}
       style={({ pressed }) => [
-        styles.actionCard,
+        styles.quickTile,
         { backgroundColor: background },
         pressed && styles.pressed,
       ]}
     >
-      <View style={[styles.actionDot, { backgroundColor: color }]} />
-      <View style={styles.actionTextWrap}>
-        <Text style={[styles.actionTitle, { color }]}>{title}</Text>
-        <Text style={styles.actionDescription}>{description}</Text>
+      <View style={[styles.tileIcon, { backgroundColor: color }]}>
+        <Text style={styles.tileIconText}>{icon}</Text>
       </View>
-      <Text style={[styles.arrow, { color }]}>‹</Text>
+      <Text style={[styles.tileTitle, { color }]}>{title}</Text>
+      <Text style={styles.tileDescription}>{description}</Text>
+      <Text style={[styles.tileArrow, { color }]}>‹</Text>
     </Pressable>
   );
 }
 
 export default function HomeScreen() {
   const { patients, activePatient, records } = useAllergy();
-
-  const allergies = records.filter(
-    (r) =>
-      r.kind === "medicine-allergy" ||
-      r.kind === "food-allergy" ||
-      r.kind === "other-allergy",
+  const allergies = records.filter((r) =>
+    ["medicine-allergy", "food-allergy", "other-allergy"].includes(r.kind),
   ).length;
   const medicines = records.filter((r) => r.kind === "medicine").length;
   const chronic = records.filter((r) => r.kind === "chronic-condition").length;
   const severeAllergies = records.filter(
     (r) =>
-      (r.kind === "medicine-allergy" ||
-        r.kind === "food-allergy" ||
-        r.kind === "other-allergy") &&
+      ["medicine-allergy", "food-allergy", "other-allergy"].includes(r.kind) &&
       r.severity === "شديدة",
   );
 
@@ -96,32 +98,49 @@ export default function HomeScreen() {
         contentContainerStyle={styles.page}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.hero}>
-          <Text style={styles.brand}>Allergy & Health Traker</Text>
-          <Text style={styles.heroTitle}>ملفك الصحي والعائلي في مكان واحد</Text>
-          <Text style={styles.heroText}>
-            رتّب المرضى والحساسيات والأدوية والسجلات المهمة، وصدّر تقريرًا عند
-            الحاجة.
-          </Text>
+        <View style={styles.topRow}>
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>
+              {activePatient?.fullName?.slice(0, 1) || "؟"}
+            </Text>
+          </View>
+          <View style={styles.topCopy}>
+            <Text style={styles.eyebrow}>Allergy & Health Traker</Text>
+            <Text style={styles.greeting}>مرحبًا بك في ملفك الصحي</Text>
+          </View>
+          <Pressable
+            onPress={() => router.push("/(tabs)/settings" as any)}
+            style={styles.topAction}
+          >
+            <Text style={styles.topActionText}>⚙</Text>
+          </Pressable>
         </View>
 
-        <View style={styles.currentCard}>
-          <Text style={styles.currentLabel}>المريض الحالي</Text>
-          <Text style={styles.currentName}>
-            {activePatient?.fullName || "لم يتم اختيار مريض"}
-          </Text>
-          <Text style={styles.currentMeta}>
+        <View style={styles.patientCard}>
+          <View style={styles.patientCardHead}>
+            <View>
+              <Text style={styles.patientLabel}>الملف النشط</Text>
+              <Text style={styles.patientName}>
+                {activePatient?.fullName || "لم يتم اختيار مريض"}
+              </Text>
+            </View>
+            <View style={styles.patientBadge}>
+              <Text style={styles.patientBadgeText}>الصحة</Text>
+            </View>
+          </View>
+          <Text style={styles.patientMeta}>
             {activePatient
-              ? `${records.length} سجل صحي${activePatient.bloodType ? ` · فصيلة الدم ${activePatient.bloodType}` : ""}`
-              : "أضف مريضًا للبدء"}
+              ? `${records.length} سجل صحي${activePatient.bloodType ? `  ·  فصيلة الدم ${activePatient.bloodType}` : ""}`
+              : "أضف ملفًا صحيًا للبدء"}
           </Text>
           <Pressable
             onPress={() => router.push("/(tabs)/patients" as any)}
-            style={styles.switchButton}
+            style={styles.patientButton}
           >
-            <Text style={styles.switchText}>
-              {activePatient ? "تغيير / إدارة المرضى" : "إضافة مريض"}
+            <Text style={styles.patientButtonText}>
+              {activePatient ? "إدارة الملف" : "إضافة ملف صحي"}
             </Text>
+            <Text style={styles.patientButtonArrow}>‹</Text>
           </Pressable>
         </View>
 
@@ -132,77 +151,104 @@ export default function HomeScreen() {
             pressed && styles.pressed,
           ]}
         >
-          <View style={styles.emergencyHeader}>
-            <Text style={styles.emergencyTitle}>بطاقة الطوارئ السريعة</Text>
-            <Text style={styles.emergencyIcon}>⚠</Text>
+          <View style={styles.emergencyTop}>
+            <View style={styles.emergencyIcon}>
+              <Text style={styles.emergencyIconText}>✚</Text>
+            </View>
+            <View style={styles.emergencyCopy}>
+              <Text style={styles.emergencyKicker}>
+                وصول سريع للطبيب والمسعف
+              </Text>
+              <Text style={styles.emergencyTitle}>بطاقة الطوارئ الطبية</Text>
+            </View>
+            <Text style={styles.emergencyArrow}>‹</Text>
           </View>
-          <View style={styles.emergencyGrid}>
-            <View style={styles.emergencyItem}>
-              <Text style={styles.emergencyLabel}>فصيلة الدم</Text>
-              <Text style={styles.emergencyValue}>
-                {activePatient?.bloodType?.trim() || "غير مسجلة"}
+          <View style={styles.emergencyStats}>
+            <View>
+              <Text style={styles.emergencyStatLabel}>فصيلة الدم</Text>
+              <Text style={styles.emergencyStatValue}>
+                {activePatient?.bloodType || "—"}
               </Text>
             </View>
-            <View style={styles.emergencyItem}>
-              <Text style={styles.emergencyLabel}>حساسيات حرجة</Text>
-              <Text style={styles.emergencyValue}>
+            <View>
+              <Text style={styles.emergencyStatLabel}>حساسيات شديدة</Text>
+              <Text style={styles.emergencyStatValue}>
                 {severeAllergies.length || "لا يوجد"}
               </Text>
             </View>
+            <View>
+              <Text style={styles.emergencyStatLabel}>جهة اتصال</Text>
+              <Text style={styles.emergencyStatValue}>
+                {activePatient?.emergencyContact ? "متاحة" : "—"}
+              </Text>
+            </View>
           </View>
-          <Text style={styles.emergencyContact}>
-            جهة الطوارئ: {activePatient?.emergencyContact || "غير مسجلة"}
-          </Text>
           {severeAllergies.length > 0 ? (
             <Text style={styles.emergencyWarning}>
-              {severeAllergies.map((item) => item.name).join("، ")}
+              تنبيه: {severeAllergies.map((item) => item.name).join("، ")}
             </Text>
-          ) : null}
+          ) : (
+            <Text style={styles.emergencyHint}>
+              اضغط لعرض المعلومات الطبية الأساسية
+            </Text>
+          )}
         </Pressable>
 
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>ملخص الملف الصحي</Text>
+          <Text style={styles.sectionCaption}>محدّث الآن</Text>
+        </View>
         <View style={styles.statsRow}>
-          <Stat value={allergies} label="حساسيات" tint={C.red} />
-          <Stat value={medicines} label="أدوية" tint={C.blue} />
-          <Stat value={chronic} label="أمراض مزمنة" tint={C.green} />
+          <Stat value={allergies} label="حساسيات" tint={C.coral} icon="!" />
+          <Stat value={medicines} label="أدوية" tint={C.blue} icon="+" />
+          <Stat value={chronic} label="أمراض مزمنة" tint={C.green} icon="♥" />
         </View>
 
-        <Text style={styles.sectionTitle}>وصول سريع</Text>
-        <ActionCard
-          title="بطاقة الطوارئ"
-          description="أهم المعلومات للطبيب والمسعف خلال ثوانٍ"
-          background={C.redSoft}
-          color={C.red}
-          onPress={() => router.push("/(tabs)/emergency" as any)}
-        />
-        <ActionCard
-          title="السجلات الصحية"
-          description="إضافة، عرض، تعديل، حذف، بحث وتصدير PDF"
-          background={C.tealSoft}
-          color={C.teal}
-          onPress={() => router.push("/(tabs)/records" as any)}
-        />
-        <ActionCard
-          title="المرضى وأفراد العائلة"
-          description={`${patients.length} ملف محفوظ على هذا الجهاز`}
-          background={C.greenSoft}
-          color={C.green}
-          onPress={() => router.push("/(tabs)/patients" as any)}
-        />
-        <ActionCard
-          title="التحديث والنسخ الاحتياطي"
-          description="الإصدار الحالي وخيارات التحديث"
-          background={C.blueSoft}
-          color={C.blue}
-          onPress={() => router.push("/(tabs)/settings" as any)}
-        />
+        <Text style={styles.sectionTitle}>الوصول السريع</Text>
+        <View style={styles.tilesGrid}>
+          <QuickTile
+            title="السجلات الصحية"
+            description="إضافة وتصدير PDF"
+            color={C.blue}
+            background={C.blueSoft}
+            icon="▣"
+            onPress={() => router.push("/(tabs)/records" as any)}
+          />
+          <QuickTile
+            title="الحساسيات"
+            description="الأطعمة والأدوية"
+            color={C.coral}
+            background={C.coralSoft}
+            icon="!"
+            onPress={() => router.push("/(tabs)/records" as any)}
+          />
+          <QuickTile
+            title="المرضى"
+            description={`${patients.length} ملف محفوظ`}
+            color={C.green}
+            background={C.greenSoft}
+            icon="●"
+            onPress={() => router.push("/(tabs)/patients" as any)}
+          />
+          <QuickTile
+            title="النسخ والحماية"
+            description="حفظ واستعادة محلية"
+            color={C.cyan}
+            background={C.cyanSoft}
+            icon="✓"
+            onPress={() => router.push("/(tabs)/settings" as any)}
+          />
+        </View>
 
-        <View style={styles.note}>
-          <Text style={styles.noteTitle}>خصوصية محلية أولًا</Text>
-          <Text style={styles.noteText}>
-            البيانات محفوظة على الجهاز حاليًا. بنية التخزين أصبحت مفصولة عن
-            الواجهات حتى نقدر نضيف مزامنة سحابية مستقبلًا بدون إعادة بناء
-            التطبيق من الصفر.
-          </Text>
+        <View style={styles.privacy}>
+          <Text style={styles.privacyIcon}>✓</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.privacyTitle}>خصوصيتك محفوظة</Text>
+            <Text style={styles.privacyText}>
+              بياناتك الطبية محفوظة محليًا على جهازك، ويمكنك إنشاء نسخة احتياطية
+              متى شئت.
+            </Text>
+          </View>
         </View>
       </ScrollView>
     </ScreenContainer>
@@ -210,169 +256,245 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  page: { padding: 20, paddingBottom: 34 },
-  hero: { paddingTop: 8, marginBottom: 18 },
-  brand: { color: C.teal, fontSize: 16, fontWeight: "900", textAlign: "right" },
-  heroTitle: {
-    color: C.navy,
-    fontSize: 30,
-    lineHeight: 39,
-    fontWeight: "900",
-    textAlign: "right",
-    marginTop: 4,
+  page: { padding: 20, paddingBottom: 38 },
+  topRow: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    marginBottom: 20,
+    gap: 10,
   },
-  heroText: {
-    color: C.muted,
-    fontSize: 16,
-    lineHeight: 26,
-    textAlign: "right",
-    marginTop: 8,
+  avatar: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    backgroundColor: C.navy,
+    alignItems: "center",
+    justifyContent: "center",
   },
-  currentCard: {
+  avatarText: { color: "#FFF", fontSize: 20, fontWeight: "900" },
+  topCopy: { flex: 1, alignItems: "flex-end" },
+  eyebrow: { color: C.cyan, fontSize: 12, fontWeight: "900" },
+  greeting: { color: C.navy, fontSize: 20, fontWeight: "900", marginTop: 2 },
+  topAction: {
+    width: 42,
+    height: 42,
+    borderRadius: 14,
+    backgroundColor: C.card,
+    borderWidth: 1,
+    borderColor: C.line,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  topActionText: { color: C.navy, fontSize: 20 },
+  patientCard: {
     backgroundColor: C.navy,
     borderRadius: 24,
     padding: 20,
     marginBottom: 14,
   },
-  currentLabel: {
-    color: "#A9DDE1",
-    fontSize: 14,
-    fontWeight: "800",
-    textAlign: "right",
-  },
-  currentName: {
-    color: "#FFF",
-    fontSize: 25,
-    fontWeight: "900",
-    textAlign: "right",
-    marginTop: 4,
-  },
-  currentMeta: {
-    color: "#D7E5EA",
-    fontSize: 15,
-    lineHeight: 23,
-    textAlign: "right",
-    marginTop: 5,
-  },
-  switchButton: {
-    alignSelf: "flex-end",
-    marginTop: 14,
-    minHeight: 46,
-    borderRadius: 14,
-    paddingHorizontal: 16,
-    backgroundColor: "rgba(255,255,255,0.12)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  switchText: { color: "#FFF", fontSize: 15, fontWeight: "900" },
-  emergencyCard: {
-    backgroundColor: C.redSoft,
-    borderColor: "#E4AAB2",
-    borderWidth: 2,
-    borderRadius: 22,
-    padding: 18,
-    marginBottom: 16,
-  },
-  emergencyHeader: {
+  patientCardHead: {
     flexDirection: "row-reverse",
     justifyContent: "space-between",
-    alignItems: "center",
+    alignItems: "flex-start",
   },
-  emergencyTitle: { color: C.red, fontSize: 20, fontWeight: "900" },
-  emergencyIcon: { color: C.red, fontSize: 25, fontWeight: "900" },
-  emergencyGrid: { flexDirection: "row-reverse", gap: 10, marginTop: 14 },
-  emergencyItem: {
-    flex: 1,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 14,
-    padding: 12,
-  },
-  emergencyLabel: {
-    color: C.muted,
+  patientLabel: {
+    color: "#B9D0F2",
     fontSize: 13,
     fontWeight: "800",
     textAlign: "right",
   },
-  emergencyValue: {
-    color: C.navy,
-    fontSize: 20,
+  patientName: {
+    color: "#FFF",
+    fontSize: 25,
     fontWeight: "900",
     textAlign: "right",
-    marginTop: 4,
+    marginTop: 3,
   },
-  emergencyContact: {
-    color: C.navy,
-    fontSize: 15,
-    fontWeight: "800",
-    textAlign: "right",
-    marginTop: 12,
+  patientBadge: {
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    backgroundColor: "#2B568D",
   },
-  emergencyWarning: {
-    color: C.red,
-    fontSize: 15,
-    fontWeight: "900",
+  patientBadgeText: { color: "#D9E9FF", fontSize: 12, fontWeight: "900" },
+  patientMeta: {
+    color: "#D4E2F5",
+    fontSize: 14,
     textAlign: "right",
     marginTop: 8,
   },
-  statsRow: { flexDirection: "row-reverse", gap: 10, marginBottom: 22 },
+  patientButton: {
+    alignSelf: "flex-end",
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: 7,
+    marginTop: 15,
+    borderRadius: 12,
+    paddingHorizontal: 13,
+    minHeight: 40,
+    backgroundColor: "#FFF",
+  },
+  patientButtonText: { color: C.navy, fontSize: 14, fontWeight: "900" },
+  patientButtonArrow: { color: C.navy, fontSize: 22 },
+  emergencyCard: {
+    backgroundColor: C.coralSoft,
+    borderColor: "#F2B7C1",
+    borderWidth: 1,
+    borderRadius: 22,
+    padding: 17,
+    marginBottom: 20,
+  },
+  emergencyTop: { flexDirection: "row-reverse", alignItems: "center", gap: 11 },
+  emergencyIcon: {
+    width: 45,
+    height: 45,
+    borderRadius: 14,
+    backgroundColor: C.coral,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  emergencyIconText: { color: "#FFF", fontSize: 23, fontWeight: "900" },
+  emergencyCopy: { flex: 1, alignItems: "flex-end" },
+  emergencyKicker: { color: C.coral, fontSize: 12, fontWeight: "800" },
+  emergencyTitle: {
+    color: "#8F3043",
+    fontSize: 19,
+    fontWeight: "900",
+    marginTop: 2,
+  },
+  emergencyArrow: { color: C.coral, fontSize: 30 },
+  emergencyStats: {
+    flexDirection: "row-reverse",
+    justifyContent: "space-between",
+    marginTop: 18,
+    paddingTop: 13,
+    borderTopWidth: 1,
+    borderTopColor: "#F4CCD2",
+  },
+  emergencyStatLabel: {
+    color: C.muted,
+    fontSize: 11,
+    fontWeight: "800",
+    textAlign: "right",
+  },
+  emergencyStatValue: {
+    color: C.navy,
+    fontSize: 17,
+    fontWeight: "900",
+    textAlign: "right",
+    marginTop: 3,
+  },
+  emergencyWarning: {
+    color: C.coral,
+    fontSize: 13,
+    fontWeight: "900",
+    textAlign: "right",
+    marginTop: 13,
+  },
+  emergencyHint: {
+    color: C.muted,
+    fontSize: 13,
+    textAlign: "right",
+    marginTop: 13,
+  },
+  sectionHeader: {
+    flexDirection: "row-reverse",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  sectionTitle: {
+    color: C.navy,
+    fontSize: 19,
+    fontWeight: "900",
+    textAlign: "right",
+    marginBottom: 10,
+  },
+  sectionCaption: { color: C.muted, fontSize: 12, fontWeight: "700" },
+  statsRow: { flexDirection: "row-reverse", gap: 9, marginBottom: 23 },
   stat: {
     flex: 1,
     backgroundColor: C.card,
     borderWidth: 1,
     borderColor: C.line,
     borderRadius: 18,
-    padding: 14,
+    padding: 12,
     alignItems: "center",
   },
-  statValue: { fontSize: 26, fontWeight: "900" },
-  statLabel: { color: C.muted, fontSize: 13, fontWeight: "800", marginTop: 2 },
-  sectionTitle: {
-    color: C.navy,
-    fontSize: 20,
-    fontWeight: "900",
-    textAlign: "right",
+  statIcon: {
+    width: 30,
+    height: 30,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 5,
+  },
+  statValue: { fontSize: 25, fontWeight: "900" },
+  statLabel: { color: C.muted, fontSize: 12, fontWeight: "800", marginTop: 2 },
+  tilesGrid: {
+    flexDirection: "row-reverse",
+    flexWrap: "wrap",
+    gap: 11,
+    marginBottom: 20,
+  },
+  quickTile: {
+    width: "48.2%",
+    minHeight: 144,
+    borderRadius: 19,
+    padding: 14,
+    position: "relative",
+  },
+  tileIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: 11,
+    alignItems: "center",
+    justifyContent: "center",
     marginBottom: 10,
   },
-  actionCard: {
-    minHeight: 92,
-    borderRadius: 20,
-    padding: 16,
-    marginBottom: 12,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  actionDot: { width: 12, height: 12, borderRadius: 6 },
-  actionTextWrap: { flex: 1 },
-  actionTitle: { fontSize: 18, fontWeight: "900", textAlign: "right" },
-  actionDescription: {
+  tileIconText: { color: "#FFF", fontSize: 17, fontWeight: "900" },
+  tileTitle: { fontSize: 16, fontWeight: "900", textAlign: "right" },
+  tileDescription: {
     color: C.muted,
-    fontSize: 14,
-    lineHeight: 22,
+    fontSize: 12,
+    lineHeight: 18,
+    textAlign: "right",
+    marginTop: 4,
+  },
+  tileArrow: { position: "absolute", left: 13, bottom: 10, fontSize: 25 },
+  privacy: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: 10,
+    backgroundColor: C.card,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: C.line,
+    padding: 14,
+  },
+  privacyIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: 11,
+    backgroundColor: C.greenSoft,
+    color: C.green,
+    textAlign: "center",
+    textAlignVertical: "center",
+    fontSize: 20,
+    fontWeight: "900",
+  },
+  privacyTitle: {
+    color: C.navy,
+    fontSize: 15,
+    fontWeight: "900",
+    textAlign: "right",
+  },
+  privacyText: {
+    color: C.muted,
+    fontSize: 12,
+    lineHeight: 18,
     textAlign: "right",
     marginTop: 3,
   },
-  arrow: { fontSize: 34, fontWeight: "300" },
-  pressed: { opacity: 0.78 },
-  note: {
-    backgroundColor: C.card,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: C.line,
-    padding: 17,
-    marginTop: 4,
-  },
-  noteTitle: {
-    color: C.navy,
-    fontSize: 17,
-    fontWeight: "900",
-    textAlign: "right",
-    marginBottom: 5,
-  },
-  noteText: {
-    color: C.muted,
-    fontSize: 14,
-    lineHeight: 23,
-    textAlign: "right",
-  },
+  pressed: { opacity: 0.78, transform: [{ scale: 0.99 }] },
 });

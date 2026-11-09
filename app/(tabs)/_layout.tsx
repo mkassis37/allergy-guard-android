@@ -23,7 +23,7 @@ export default function TabLayout() {
           paddingBottom: bottomPadding,
           height: 58 + bottomPadding,
           backgroundColor: "#FFFFFF",
-          borderTopColor: "#D9E5EA",
+          borderTopColor: "#E1E7F0",
           borderTopWidth: 1,
         },
       }}

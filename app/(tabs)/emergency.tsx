@@ -21,13 +21,13 @@ import { getGovernmentEmergencyNumber } from "@/lib/emergency-settings";
 
 const palette = {
   navy: "#17324D",
-  teal: "#087E8B",
-  bg: "#F5FAFB",
+  teal: "#2C6EBD",
+  bg: "#F6F8FC",
   card: "#FFFFFF",
-  line: "#D7E5E8",
-  muted: "#637787",
-  red: "#B23A48",
-  paleRed: "#FFF1F2",
+  line: "#E1E7F0",
+  muted: "#66758A",
+  red: "#D95368",
+  paleRed: "#FFF0F3",
 };
 
 export default function EmergencyScreen() {
@@ -399,10 +399,10 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: palette.card,
-    borderRadius: 20,
+    borderRadius: 24,
     padding: 17,
     borderWidth: 1,
-    borderColor: palette.line,
+    borderColor: "#E6C1C8",
     shadowColor: palette.navy,
     shadowOpacity: 0.08,
     shadowRadius: 10,
@@ -413,7 +413,7 @@ const styles = StyleSheet.create({
     width: 46,
     height: 46,
     borderRadius: 14,
-    backgroundColor: palette.teal,
+    backgroundColor: palette.red,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -457,7 +457,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   fieldHeading: {
-    color: palette.teal,
+    color: palette.navy,
     fontSize: 12,
     fontWeight: "800",
     textAlign: "right",
@@ -554,7 +554,7 @@ const styles = StyleSheet.create({
   actions: { flexDirection: "row-reverse", gap: 8, marginTop: 14 },
   share: {
     flex: 1,
-    backgroundColor: palette.teal,
+    backgroundColor: palette.navy,
     borderRadius: 13,
     paddingVertical: 14,
     alignItems: "center",
@@ -566,10 +566,10 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     alignItems: "center",
     borderWidth: 1,
-    borderColor: palette.teal,
+    borderColor: palette.navy,
     backgroundColor: palette.card,
   },
-  editText: { color: palette.teal, fontSize: 14, fontWeight: "800" },
+  editText: { color: palette.navy, fontSize: 14, fontWeight: "800" },
   backupSection: {
     backgroundColor: palette.card,
     borderRadius: 15,
