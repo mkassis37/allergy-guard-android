@@ -3,6 +3,7 @@ import {
   Alert,
   Linking,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -33,6 +34,8 @@ const palette = {
 export default function EmergencyScreen() {
   const { records, profile, saveProfile, replaceData } = useAllergy();
   const [editing, setEditing] = useState(false);
+  const [doctorMode, setDoctorMode] = useState(false);
+  const [previewVisible, setPreviewVisible] = useState(false);
   const [governmentNumber, setGovernmentNumber] = useState("911");
   useEffect(() => {
     getGovernmentEmergencyNumber()
@@ -49,6 +52,7 @@ export default function EmergencyScreen() {
   const tolerated = records.filter(
     (item) => item.kind === "medicine-tolerated",
   );
+  const severeAllergies = allergies.filter((item) => item.severity === "شديدة");
   const [draft, setDraft] = useState(profile);
   const shareCard = async () => {
     const lines = [
@@ -321,6 +325,39 @@ export default function EmergencyScreen() {
             التنفس أو تورم الوجه أو اللسان اتصل بالطوارئ فورًا.
           </Text>
         </View>
+        <View style={styles.doctorPanel}>
+          <View style={styles.doctorPanelCopy}>
+            <Text style={styles.doctorPanelTitle}>وضع الطبيب المبسط</Text>
+            <Text style={styles.doctorPanelHint}>
+              عرض الاسم، فصيلة الدم، الحساسية الحرجة، الأدوية وجهة الاتصال فقط.
+            </Text>
+          </View>
+          <Pressable
+            accessibilityRole="switch"
+            accessibilityState={{ checked: doctorMode }}
+            onPress={() => {
+              const next = !doctorMode;
+              setDoctorMode(next);
+              if (next) setPreviewVisible(true);
+            }}
+            style={[styles.modeToggle, doctorMode && styles.modeToggleActive]}
+          >
+            <Text style={styles.modeToggleText}>
+              {doctorMode ? "مفعل" : "تشغيل"}
+            </Text>
+          </Pressable>
+        </View>
+        <Pressable
+          onPress={() => setPreviewVisible(true)}
+          style={({ pressed }) => [
+            styles.previewButton,
+            pressed && { opacity: 0.8 },
+          ]}
+        >
+          <Text style={styles.previewButtonText}>
+            معاينة بطاقة الطوارئ قبل المشاركة
+          </Text>
+        </Pressable>
         {editing && (
           <View style={styles.form}>
             <KeyboardAvoidingView
@@ -377,6 +414,79 @@ export default function EmergencyScreen() {
           </View>
         )}
       </ScrollView>
+      <Modal
+        visible={previewVisible}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setPreviewVisible(false)}
+      >
+        <View style={styles.previewBackdrop}>
+          <View style={styles.previewSheet}>
+            <View style={styles.previewHeader}>
+              <Pressable onPress={() => setPreviewVisible(false)}>
+                <Text style={styles.previewClose}>إغلاق</Text>
+              </Pressable>
+              <Text style={styles.previewTitle}>
+                {doctorMode ? "بطاقة الطبيب المختصرة" : "معاينة للطبيب"}
+              </Text>
+            </View>
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={styles.previewContent}
+            >
+              <View style={styles.previewMedicalHeader}>
+                <Text style={styles.previewMedicalKicker}>
+                  MEDICAL ID · بطاقة طبية
+                </Text>
+                <Text style={styles.previewMedicalName}>
+                  {profile.fullName || "الاسم غير مسجل"}
+                </Text>
+                <Text style={styles.previewMedicalMeta}>
+                  فصيلة الدم: {profile.bloodType || "غير مسجلة"}
+                </Text>
+              </View>
+              <View style={styles.previewCritical}>
+                <Text style={styles.previewSectionRed}>الحساسيات الحرجة</Text>
+                <Text style={styles.previewValue}>
+                  {severeAllergies.map((item) => item.name).join("، ") ||
+                    "لا توجد حساسية شديدة مسجلة"}
+                </Text>
+              </View>
+              <Text style={styles.previewSection}>
+                الأدوية أو المواد الفعالة المسببة
+              </Text>
+              <Text style={styles.previewValue}>
+                {allergies
+                  .filter((item) => item.kind === "medicine-allergy")
+                  .map(
+                    (item) =>
+                      `${item.name}${item.activeIngredient ? ` — ${item.activeIngredient}` : ""}`,
+                  )
+                  .join("، ") || "لا توجد سجلات"}
+              </Text>
+              <Text style={styles.previewSection}>الأدوية الحالية</Text>
+              <Text style={styles.previewValue}>
+                {medicines
+                  .map(
+                    (item) =>
+                      `${item.name}${item.activeIngredient ? ` — ${item.activeIngredient}` : ""}`,
+                  )
+                  .join("، ") || "لا توجد سجلات"}
+              </Text>
+              <Text style={styles.previewSection}>الاتصال</Text>
+              <Text style={styles.previewValue}>
+                {profile.emergencyContact || "جهة الاتصال غير مسجلة"}
+              </Text>
+              <Text style={styles.previewDisclaimer}>
+                هذه معاينة للمعلومات المسجلة وليست تشخيصًا طبيًا.
+              </Text>
+            </ScrollView>
+            <Pressable onPress={shareCard} style={styles.previewShare}>
+              <Text style={styles.previewShareText}>مشاركة هذه البطاقة</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     </ScreenContainer>
   );
 }
@@ -670,6 +780,148 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   saveText: { color: "white", fontSize: 14, fontWeight: "800" },
+  doctorPanel: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: 10,
+    backgroundColor: "#EEF5FF",
+    borderColor: "#C8DCF7",
+    borderWidth: 1,
+    borderRadius: 16,
+    padding: 13,
+    marginTop: 12,
+  },
+  doctorPanelCopy: { flex: 1 },
+  doctorPanelTitle: {
+    color: palette.navy,
+    fontSize: 14,
+    fontWeight: "900",
+    textAlign: "right",
+  },
+  doctorPanelHint: {
+    color: palette.muted,
+    fontSize: 11,
+    lineHeight: 17,
+    textAlign: "right",
+    marginTop: 3,
+  },
+  modeToggle: {
+    minWidth: 58,
+    minHeight: 36,
+    borderRadius: 12,
+    backgroundColor: "#D9E4F2",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  modeToggleActive: { backgroundColor: palette.navy },
+  modeToggleText: { color: palette.navy, fontSize: 12, fontWeight: "900" },
+  previewButton: {
+    minHeight: 48,
+    borderRadius: 14,
+    backgroundColor: palette.red,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 10,
+  },
+  previewButtonText: { color: "#FFF", fontSize: 14, fontWeight: "900" },
+  previewBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(16,28,45,0.5)",
+    justifyContent: "flex-end",
+  },
+  previewSheet: {
+    maxHeight: "92%",
+    backgroundColor: palette.bg,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    padding: 18,
+  },
+  previewHeader: {
+    flexDirection: "row-reverse",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  previewTitle: {
+    color: palette.navy,
+    fontSize: 21,
+    fontWeight: "900",
+    textAlign: "right",
+  },
+  previewClose: { color: palette.teal, fontSize: 14, fontWeight: "900" },
+  previewContent: { paddingBottom: 12 },
+  previewMedicalHeader: {
+    backgroundColor: palette.navy,
+    borderRadius: 18,
+    padding: 17,
+    marginBottom: 12,
+  },
+  previewMedicalKicker: {
+    color: "#BFD5F2",
+    fontSize: 11,
+    fontWeight: "800",
+    textAlign: "right",
+  },
+  previewMedicalName: {
+    color: "#FFF",
+    fontSize: 24,
+    fontWeight: "900",
+    textAlign: "right",
+    marginTop: 8,
+  },
+  previewMedicalMeta: {
+    color: "#DCE9FA",
+    fontSize: 14,
+    textAlign: "right",
+    marginTop: 4,
+  },
+  previewCritical: {
+    backgroundColor: palette.paleRed,
+    borderColor: "#EAB0BA",
+    borderWidth: 1,
+    borderRadius: 15,
+    padding: 13,
+    marginBottom: 5,
+  },
+  previewSectionRed: {
+    color: palette.red,
+    fontSize: 13,
+    fontWeight: "900",
+    textAlign: "right",
+  },
+  previewSection: {
+    color: palette.navy,
+    fontSize: 13,
+    fontWeight: "900",
+    textAlign: "right",
+    marginTop: 13,
+    marginBottom: 5,
+  },
+  previewValue: {
+    color: palette.navy,
+    backgroundColor: palette.card,
+    borderRadius: 11,
+    padding: 11,
+    fontSize: 13,
+    lineHeight: 20,
+    textAlign: "right",
+  },
+  previewDisclaimer: {
+    color: palette.muted,
+    fontSize: 11,
+    lineHeight: 17,
+    textAlign: "right",
+    marginTop: 14,
+  },
+  previewShare: {
+    backgroundColor: palette.navy,
+    minHeight: 50,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 8,
+  },
+  previewShareText: { color: "#FFF", fontSize: 15, fontWeight: "900" },
   modalBackdrop: {
     flex: 1,
     backgroundColor: "rgba(23,50,77,0.45)",
