@@ -78,6 +78,9 @@ jobs:
           grep -q 'parsed.iterations' lib/backup-crypto.ts
           echo "Backup KDF compatibility guard passed."
 
+      - name: Unit tests
+        run: pnpm test
+
       - name: Typecheck
         run: pnpm check
 
