@@ -134,7 +134,7 @@ export default function SettingsScreen() {
       const result = await shareLocalBackup(snapshot, backupPassword);
       Alert.alert(
         "تم تجهيز النسخة المشفرة",
-        `تشمل ${snapshot.patients.length} ملف(ات) و${result.attachmentCount} مرفق(ات). احتفظ بكلمة المرور؛ لن يمكن استعادة النسخة دونها.\\n\\nاسم الملف: ${result.filename}`,
+        `تشمل ${snapshot.patients.length} ملف(ات) و${result.attachmentCount} مرفق(ات). احتفظ بكلمة المرور؛ لن يمكن استعادة النسخة دونها.\n\nاسم الملف: ${result.filename}`,
       );
     } catch (error) {
       Alert.alert(
@@ -156,7 +156,7 @@ export default function SettingsScreen() {
       const patientCount = backup.data.patients.length;
       Alert.alert(
         "استرجاع النسخة؟",
-        `تاريخ النسخة: ${formatDate(backup.exportedAt)}\\nعدد المرضى: ${patientCount}\\nعدد المرفقات: ${backup.attachments.length}\\n${result.encrypted ? "النسخة مشفرة." : "تنبيه: هذه نسخة قديمة غير مشفرة."}\\n\\nسيتم استبدال البيانات الحالية على هذا الجهاز.`,
+        `تاريخ النسخة: ${formatDate(backup.exportedAt)}\nعدد المرضى: ${patientCount}\nعدد المرفقات: ${backup.attachments.length}\n${result.encrypted ? "النسخة مشفرة." : "تنبيه: هذه نسخة قديمة غير مشفرة."}\n\nسيتم استبدال البيانات الحالية على هذا الجهاز.`,
         [
           { text: "إلغاء", style: "cancel" },
           {
