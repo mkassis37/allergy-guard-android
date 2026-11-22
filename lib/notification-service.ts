@@ -1,11 +1,12 @@
 import * as Notifications from "expo-notifications";
+import { Platform } from "react-native";
 import type { Patient } from "./allergy-store";
 
 const MAX_PENDING_HEALTH_NOTIFICATIONS = 180;
 const MEDICATION_HORIZON_DAYS = 14;
 
 export async function requestHealthNotificationPermission(): Promise<boolean> {
-  if (process.env.EXPO_OS === "android") {
+  if (Platform.OS === "android") {
     await Notifications.setNotificationChannelAsync("health-reminders", {
       name: "التذكيرات الصحية",
       importance: Notifications.AndroidImportance.DEFAULT,
