@@ -61,9 +61,9 @@ export default function MedicationsScreen() {
       Alert.alert("اسم الدواء مطلوب", "أدخل اسم الدواء كما هو مكتوب على العبوة أو الوصفة.");
       return;
     }
-    const time = firstTime.trim();
-    if (time && !/^([01]\d|2[0-3]):[0-5]\d$/.test(time)) {
-      Alert.alert("صيغة الوقت غير صحيحة", "اكتب الوقت بصيغة 24 ساعة مثل 08:00.");
+    const times = firstTime.split(",").map((item) => item.trim()).filter(Boolean);
+    if (times.some((time) => !/^([01]\d|2[0-3]):[0-5]\d$/.test(time))) {
+      Alert.alert("صيغة الوقت غير صحيحة", "اكتب الأوقات بصيغة 24 ساعة وافصل بينها بفاصلة، مثل 08:00, 20:00.");
       return;
     }
     setSaving(true);
@@ -79,11 +79,11 @@ export default function MedicationsScreen() {
         createdAt: now,
         updatedAt: now,
       };
-      const nextSchedules: MedicationSchedule[] = time
+      const nextSchedules: MedicationSchedule[] = times.length
         ? [{
             id: newId("schedule"),
             medicationId: medication.id,
-            times: [time],
+            times,
             weekdays: [0, 1, 2, 3, 4, 5, 6],
             startDate: now.slice(0, 10),
             enabled: true,
@@ -242,7 +242,7 @@ export default function MedicationsScreen() {
             <TextInput value={ingredient} onChangeText={setIngredient} placeholder="المادة الفعالة (اختياري)" placeholderTextColor={C.muted} style={styles.input} textAlign="right" />
             <TextInput value={dose} onChangeText={setDose} placeholder="الجرعة كما وردت في الوصفة" placeholderTextColor={C.muted} style={styles.input} textAlign="right" />
             <TextInput value={instructions} onChangeText={setInstructions} placeholder="تعليمات الطبيب" placeholderTextColor={C.muted} style={styles.input} textAlign="right" />
-            <TextInput value={firstTime} onChangeText={setFirstTime} placeholder="وقت الجرعة الأول (مثال 08:00) — اختياري" placeholderTextColor={C.muted} style={styles.input} textAlign="right" />
+            <TextInput value={firstTime} onChangeText={setFirstTime} placeholder="أوقات الجرعات (مثال 08:00, 20:00) — اختياري" placeholderTextColor={C.muted} style={styles.input} textAlign="right" />
             <Text style={styles.helper}>إدخال وقت هنا يحفظ جدولًا مبدئيًا فقط؛ لا يفعّل إشعارًا ولا يحدد جرعة طبية.</Text>
             <View style={styles.modalActions}>
               <Pressable onPress={() => { resetForm(); setModalVisible(false); }} style={styles.cancelButton}><Text style={styles.cancelText}>إلغاء</Text></Pressable>
