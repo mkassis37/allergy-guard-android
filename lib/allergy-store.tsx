@@ -326,11 +326,13 @@ export function AllergyProvider({ children }: { children: React.ReactNode }) {
             ...profile,
             id: makeId("patient"),
             records: normalizeRecords(parsed.records),
+            ...normalizePatientHealthData({}),
             createdAt: now,
             updatedAt: now,
           };
+          await writeEncryptedJson(PRE_V3_RECOVERY_KEY, parsed);
           const migrated = {
-            schemaVersion: 2 as const,
+            schemaVersion: 3 as const,
             patients: [patient],
             activePatientId: patient.id,
           };
