@@ -9,7 +9,7 @@ import React, {
   useState,
 } from "react";
 import { normalizePatientHealthData, type PatientHealthData } from "./health-types";
-import { syncPatientHealthNotifications } from "./notification-service";
+import { clearScheduledHealthNotifications, syncPatientHealthNotifications } from "./notification-service";
 import {
   AUTO_BACKUP_INTERVAL_MS,
   AUTO_BACKUP_STORAGE_KEY,
@@ -411,10 +411,11 @@ export function AllergyProvider({ children }: { children: React.ReactNode }) {
     notificationSyncQueue.current = notificationSyncQueue.current
       .catch(() => undefined)
       .then(async () => {
+        await clearScheduledHealthNotifications();
         let remaining = 180;
         for (const patient of patients) {
-          if (cancelled || remaining <= 0) break;
-          remaining -= await syncPatientHealthNotifications(patient, remaining);
+          if (cancelled) break;
+          remaining = Math.max(0, remaining - await syncPatientHealthNotifications(patient, remaining));
         }
       })
       .catch(() => {
