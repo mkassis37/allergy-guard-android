@@ -115,7 +115,7 @@ async function collectAttachments(snapshot: AllergySnapshot) {
   return attachments;
 }
 
-export async function shareLocalBackup(
+export async function createEncryptedDeviceBackup(
   snapshot: AllergySnapshot,
   password: string,
 ) {
@@ -129,8 +129,19 @@ export async function shareLocalBackup(
     data: snapshot,
     attachments: await collectAttachments(snapshot),
   };
-  const encrypted = await encryptJsonPayload(payload, password);
-  const filename = backupFilename();
+  return {
+    encrypted: await encryptJsonPayload(payload, password),
+    filename: backupFilename(),
+    attachmentCount: payload.attachments.length,
+  };
+}
+
+export async function shareLocalBackup(
+  snapshot: AllergySnapshot,
+  password: string,
+) {
+  const { encrypted, filename, attachmentCount } =
+    await createEncryptedDeviceBackup(snapshot, password);
   const baseDirectory = FileSystem.cacheDirectory ?? FileSystem.documentDirectory;
   if (!baseDirectory) throw new Error("مساحة حفظ النسخة غير متاحة.");
   const uri = `${baseDirectory}${filename}`;
@@ -138,7 +149,7 @@ export async function shareLocalBackup(
     encoding: FileSystem.EncodingType.UTF8,
   });
   await shareFile(uri);
-  return { uri, filename, attachmentCount: payload.attachments.length };
+  return { uri, filename, attachmentCount };
 }
 
 export type PickedDeviceBackup = {
