@@ -77,7 +77,7 @@ function QuickTile({
 }
 
 export default function HomeScreen() {
-  const { patients, activePatient, records } = useAllergy();
+  const { patients, activePatient, records, storageError } = useAllergy();
   const allergies = records.filter((r) =>
     ["medicine-allergy", "food-allergy", "other-allergy"].includes(r.kind),
   ).length;
@@ -105,7 +105,7 @@ export default function HomeScreen() {
             </Text>
           </View>
           <View style={styles.topCopy}>
-            <Text style={styles.eyebrow}>Allergy & Health Traker</Text>
+            <Text style={styles.eyebrow}>Allergy & Health Tracker</Text>
             <Text style={styles.greeting}>مرحبًا بك في ملفك الصحي</Text>
           </View>
           <Pressable
@@ -115,6 +115,16 @@ export default function HomeScreen() {
             <Text style={styles.topActionText}>⚙</Text>
           </Pressable>
         </View>
+
+        {storageError ? (
+          <View style={styles.privacy}>
+            <Text style={styles.privacyIcon}>!</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.privacyTitle}>تعذر فتح البيانات المحمية</Text>
+              <Text style={styles.privacyText}>{storageError} لم يتم حذف بياناتك. لا تحذف التطبيق أو بياناته قبل مراجعة النسخة الاحتياطية.</Text>
+            </View>
+          </View>
+        ) : null}
 
         <View style={styles.patientCard}>
           <View style={styles.patientCardHead}>
@@ -220,7 +230,7 @@ export default function HomeScreen() {
             color={C.coral}
             background={C.coralSoft}
             icon="!"
-            onPress={() => router.push("/(tabs)/records" as any)}
+            onPress={() => router.push({ pathname: "/(tabs)/records", params: { filter: "allergies" } } as any)}
           />
           <QuickTile
             title="المرضى"

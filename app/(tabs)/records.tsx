@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   ActivityIndicator,
@@ -32,6 +33,8 @@ import {
 import { exportRecordsPdf } from "@/lib/pdf-export";
 import { exportBackup } from "@/lib/backup";
 import * as DocumentPicker from "expo-document-picker";
+import * as FileSystem from "expo-file-system/legacy";
+import { decryptForDevice, encryptForDevice } from "@/lib/secure-local-storage";
 
 const C = {
   navy: "#173B6C",
@@ -55,7 +58,7 @@ const C = {
   brownSoft: "#F7F1EF",
 };
 
-type FilterKey = "all" | RecordKind;
+type FilterKey = "all" | "allergies" | RecordKind;
 
 type KindOption = {
   key: RecordKind;
@@ -135,6 +138,7 @@ const kindOptions: KindOption[] = [
 
 const filters: Array<{ key: FilterKey; label: string }> = [
   { key: "all", label: "الكل" },
+  { key: "allergies", label: "الحساسيات" },
   ...kindOptions.map(({ key, label }) => ({ key, label })),
 ];
 
@@ -144,6 +148,18 @@ function optionFor(kind: RecordKind) {
 
 function labelFor(kind: RecordKind) {
   return optionFor(kind).label;
+}
+
+function normalizeMedicationText(value: string) {
+  return value
+    .normalize("NFKC")
+    .toLocaleLowerCase("ar")
+    .replace(/[\u064B-\u065F\u0670]/g, "")
+    .replace(/[أإآ]/g, "ا")
+    .replace(/[ى]/g, "ي")
+    .replace(/[^a-z0-9\u0600-\u06FF]+/g, " ")
+    .trim()
+    .replace(/\s+/g, " ");
 }
 
 function Field({
@@ -179,6 +195,7 @@ function Field({
 }
 
 export default function RecordsScreen() {
+  const routeParams = useLocalSearchParams<{ filter?: string }>();
   const insets = useSafeAreaInsets();
   const systemBottomClearance =
     Platform.OS === "android"
@@ -197,6 +214,7 @@ export default function RecordsScreen() {
   } = useAllergy();
 
   const [filter, setFilter] = useState<FilterKey>("all");
+  const [reportsExpanded, setReportsExpanded] = useState(false);
   const [query, setQuery] = useState("");
   const [viewRecord, setViewRecord] = useState<AllergyRecord | null>(null);
   const [editorVisible, setEditorVisible] = useState(false);
@@ -218,10 +236,19 @@ export default function RecordsScreen() {
   const [exporting, setExporting] = useState<"pdf" | "csv" | null>(null);
   const [saving, setSaving] = useState(false);
 
+  useEffect(() => {
+    const requested = routeParams.filter;
+    if (requested === "allergies" || requested === "all" || kindOptions.some((item) => item.key === requested)) {
+      setFilter((requested || "all") as FilterKey);
+      setQuery("");
+    }
+  }, [routeParams.filter]);
+
   const shown = useMemo(() => {
     const normalizedQuery = query.trim().toLocaleLowerCase("ar");
     return records.filter((item) => {
-      if (filter !== "all" && item.kind !== filter) return false;
+      if (filter === "allergies" && !["medicine-allergy", "food-allergy", "other-allergy"].includes(item.kind)) return false;
+      if (filter !== "all" && filter !== "allergies" && item.kind !== filter) return false;
       if (!normalizedQuery) return true;
       return [
         item.name,
@@ -231,6 +258,10 @@ export default function RecordsScreen() {
         item.frequency,
         item.symptoms,
         item.notes,
+        item.eventDate,
+        item.hospital,
+        item.anesthesiaType,
+        item.anesthesiaNotes,
       ]
         .filter(Boolean)
         .some((value) =>
@@ -299,17 +330,82 @@ export default function RecordsScreen() {
     setEditorVisible(true);
   };
 
+  const openMedicalAttachment = async (uri: string) => {
+    try {
+      if (!uri.endsWith(".agenc")) {
+        await Linking.openURL(uri);
+        return;
+      }
+      const raw = await FileSystem.readAsStringAsync(uri, {
+        encoding: FileSystem.EncodingType.UTF8,
+      });
+      const payload = await decryptForDevice<{
+        base64: string;
+        fileName: string;
+        mimeType: string;
+      }>(raw);
+      const cacheDirectory = FileSystem.cacheDirectory;
+      if (!cacheDirectory) throw new Error("مجلد المعاينة المؤقت غير متاح.");
+      const extension = payload.fileName.split(".").pop()?.replace(/[^a-z0-9]/gi, "") || "bin";
+      const previewUri = `${cacheDirectory}medical-preview-${Date.now()}.${extension}`;
+      await FileSystem.writeAsStringAsync(previewUri, payload.base64, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+      await Linking.openURL(previewUri);
+    } catch (error) {
+      Alert.alert(
+        "تعذر فتح المرفق",
+        error instanceof Error ? error.message : "تعذر فك تشفير الملف أو فتحه.",
+      );
+    }
+  };
+
   const pickMedicalAttachment = async () => {
-    const result = await DocumentPicker.getDocumentAsync({
-      type: ["application/pdf", "image/*"],
-      copyToCacheDirectory: true,
-      multiple: true,
-    });
-    if (!result.canceled) {
-      setAttachmentUris((current) => [
-        ...current,
-        ...result.assets.map((asset) => asset.uri),
-      ]);
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ["application/pdf", "image/*"],
+        copyToCacheDirectory: true,
+        multiple: true,
+      });
+      if (result.canceled) return;
+      const directory = FileSystem.documentDirectory
+        ? `${FileSystem.documentDirectory}medical-attachments/`
+        : null;
+      if (!directory) {
+        Alert.alert("تعذر حفظ المرفق", "مساحة حفظ الملفات الدائمة غير متاحة على هذا الجهاز.");
+        return;
+      }
+      const info = await FileSystem.getInfoAsync(directory);
+      if (!info.exists) {
+        await FileSystem.makeDirectoryAsync(directory, { intermediates: true });
+      }
+      const savedUris = await Promise.all(
+        result.assets.map(async (asset, index) => {
+          const fileName = asset.name || "medical-file";
+          const base64 = await FileSystem.readAsStringAsync(asset.uri, {
+            encoding: FileSystem.EncodingType.Base64,
+          });
+          const encrypted = await encryptForDevice({
+            fileName,
+            mimeType: asset.mimeType || "application/octet-stream",
+            base64,
+          });
+          const safeName = fileName
+            .replace(/[^\w.\-\u0600-\u06FF]/g, "_")
+            .slice(-80);
+          const destination = `${directory}${Date.now()}-${index}-${safeName}.agenc`;
+          await FileSystem.writeAsStringAsync(destination, encrypted, {
+            encoding: FileSystem.EncodingType.UTF8,
+          });
+          return destination;
+        }),
+      );
+      setAttachmentUris((current) => [...current, ...savedUris]);
+    } catch (error) {
+      Alert.alert(
+        "تعذر إضافة المرفق",
+        error instanceof Error ? error.message : "حدث خطأ أثناء تشفير الملف وحفظه.",
+      );
     }
   };
 
@@ -330,15 +426,12 @@ export default function RecordsScreen() {
       kind === "medicine-tolerated";
 
     if (isMedication && !skipMedicationWarning && kind !== "medicine-allergy") {
-      const entered = `${name} ${activeIngredient}`
-        .trim()
-        .toLocaleLowerCase("ar");
+      const entered = normalizeMedicationText(`${name} ${activeIngredient}`);
       const match = records.find((record) => {
         if (record.kind !== "medicine-allergy") return false;
-        const known =
-          `${record.name} ${record.activeIngredient ?? ""}`.toLocaleLowerCase(
-            "ar",
-          );
+        const known = normalizeMedicationText(
+          `${record.name} ${record.activeIngredient ?? ""}`,
+        );
         return (
           entered.length > 2 &&
           (known.includes(entered) || entered.includes(known))
@@ -346,8 +439,8 @@ export default function RecordsScreen() {
       });
       if (match) {
         Alert.alert(
-          "تحذير حساسية دوائية",
-          `يتطابق الدواء مع «${match.name}»${match.activeIngredient ? ` (${match.activeIngredient})` : ""}. راجع الطبيب قبل استخدامه.`,
+          "تنبيه تشابه نصي — ليس فحص سلامة دوائية",
+          `قد يتشابه الاسم مع سجل الحساسية «${match.name}»${match.activeIngredient ? ` (${match.activeIngredient})` : ""}. هذه مقارنة نصية أولية فقط؛ وعدم ظهور التنبيه لا يعني أن الدواء آمن. تحقق من الطبيب أو الصيدلي قبل الاستخدام.`,
           [
             { text: "إلغاء الحفظ", style: "cancel" },
             { text: "حفظ رغم التحذير", onPress: () => save(true) },
@@ -534,89 +627,42 @@ export default function RecordsScreen() {
                 <Text style={styles.sectionTitle}>إضافة معلومة صحية</Text>
               </View>
 
-              <View style={styles.quickAddGrid}>
-                {kindOptions.map((option) => (
-                  <Pressable
-                    key={option.key}
-                    onPress={() => openAdd(option.key)}
-                    style={({ pressed }) => [
-                      styles.quickAddCard,
-                      {
-                        backgroundColor: option.soft,
-                        borderColor: `${option.color}30`,
-                      },
-                      pressed && styles.quickPressed,
-                    ]}
-                    accessibilityRole="button"
-                    accessibilityLabel={`إضافة ${option.label}`}
-                  >
-                    <View style={styles.quickTopRow}>
-                      <View
-                        style={[
-                          styles.countPill,
-                          { backgroundColor: option.color },
-                        ]}
-                      >
-                        <Text style={styles.countText}>
-                          {counts[option.key] ?? 0}
-                        </Text>
-                      </View>
-                      <Text style={styles.quickIcon}>{option.icon}</Text>
-                    </View>
-                    <Text style={[styles.quickTitle, { color: option.color }]}>
-                      {option.label}
-                    </Text>
-                    <Text style={styles.quickDescription}>
-                      {option.description}
-                    </Text>
-                    <View
-                      style={[
-                        styles.quickAddButton,
-                        { backgroundColor: option.color },
-                      ]}
-                    >
-                      <Text style={styles.quickAddButtonText}>＋ إضافة</Text>
-                    </View>
-                  </Pressable>
-                ))}
+              <View style={styles.addSection}>
+                <View style={styles.addSectionCopy}>
+                  <Text style={styles.addSectionTitle}>إضافة سجل صحي</Text>
+                  <Text style={styles.addSectionHint}>اضغط لإضافة سجل، ثم اختر نوعه من النموذج. يمكنك إرفاق التقارير الطبية.</Text>
+                </View>
+                <Pressable onPress={() => openAdd("medicine")} style={({ pressed }) => [styles.primaryAddButton, pressed && styles.quickPressed]}>
+                  <Text style={styles.primaryAddButtonText}>＋ إضافة سجل جديد</Text>
+                </Pressable>
               </View>
 
               <View style={styles.exportSection}>
-                <Text style={styles.exportSectionTitle}>تقارير المريض</Text>
-                <View style={styles.exportActions}>
-                  <Pressable
-                    onPress={createPdf}
-                    disabled={!activePatient || exporting !== null}
-                    style={({ pressed }) => [
-                      styles.reportButton,
-                      pressed && styles.pressed,
-                      (!activePatient || exporting !== null) && styles.disabled,
-                    ]}
-                  >
-                    {exporting === "pdf" ? (
-                      <ActivityIndicator color={C.teal} size="small" />
-                    ) : (
-                      <Text style={styles.reportButtonText}>📄 تصدير PDF</Text>
-                    )}
-                  </Pressable>
-                  <Pressable
-                    onPress={createCsv}
-                    disabled={!activePatient || exporting !== null}
-                    style={({ pressed }) => [
-                      styles.reportButton,
-                      pressed && styles.pressed,
-                      (!activePatient || exporting !== null) && styles.disabled,
-                    ]}
-                  >
-                    {exporting === "csv" ? (
-                      <ActivityIndicator color={C.teal} size="small" />
-                    ) : (
-                      <Text style={styles.reportButtonText}>
-                        📊 تصدير Excel
-                      </Text>
-                    )}
-                  </Pressable>
-                </View>
+                <Pressable onPress={() => setReportsExpanded((value) => !value)} style={styles.reportHeader}>
+                  <Text style={styles.reportChevron}>{reportsExpanded ? "−" : "+"}</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.exportSectionTitle}>تقارير المريض والتصدير</Text>
+                    <Text style={styles.reportHint}>ملفات PDF وExcel للسجلات الحالية</Text>
+                  </View>
+                </Pressable>
+                {reportsExpanded ? (
+                  <View style={styles.exportActions}>
+                    <Pressable
+                      onPress={createPdf}
+                      disabled={!activePatient || exporting !== null}
+                      style={({ pressed }) => [styles.reportButton, pressed && styles.pressed, (!activePatient || exporting !== null) && styles.disabled]}
+                    >
+                      {exporting === "pdf" ? <ActivityIndicator color={C.teal} size="small" /> : <Text style={styles.reportButtonText}>📄 تصدير PDF</Text>}
+                    </Pressable>
+                    <Pressable
+                      onPress={createCsv}
+                      disabled={!activePatient || exporting !== null}
+                      style={({ pressed }) => [styles.reportButton, pressed && styles.pressed, (!activePatient || exporting !== null) && styles.disabled]}
+                    >
+                      {exporting === "csv" ? <ActivityIndicator color={C.teal} size="small" /> : <Text style={styles.reportButtonText}>📊 تصدير Excel</Text>}
+                    </Pressable>
+                  </View>
+                ) : null}
               </View>
 
               <Text style={styles.savedTitle}>السجلات المحفوظة</Text>
@@ -823,7 +869,7 @@ export default function RecordsScreen() {
                     {viewRecord.attachmentUris.map((uri, index) => (
                       <Pressable
                         key={`${uri}-${index}`}
-                        onPress={() => void Linking.openURL(uri)}
+                        onPress={() => void openMedicalAttachment(uri)}
                         style={styles.attachmentLink}
                       >
                         <Text style={styles.attachmentLinkText}>
@@ -1072,7 +1118,7 @@ export default function RecordsScreen() {
                     <Text style={styles.attachmentHint}>
                       {attachmentUris.length
                         ? `تم إرفاق ${attachmentUris.length} ملف(ات) محليًا`
-                        : "PDF أو صورة — تحفظ محليًا على الجهاز"}
+                        : "PDF أو صورة — تُشفّر وتحفظ محليًا على الجهاز"}
                     </Text>
                   </Pressable>
                 </>
@@ -1319,6 +1365,15 @@ const styles = StyleSheet.create({
     textAlign: "right",
     marginBottom: 3,
   },
+  addSection: { backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: 20, padding: 16, marginBottom: 14, gap: 12 },
+  addSectionCopy: { alignItems: "flex-end" },
+  addSectionTitle: { color: C.navy, fontSize: 20, fontWeight: "900", textAlign: "right" },
+  addSectionHint: { color: C.muted, fontSize: 13, lineHeight: 20, textAlign: "right", marginTop: 4 },
+  primaryAddButton: { minHeight: 54, borderRadius: 15, backgroundColor: C.teal, alignItems: "center", justifyContent: "center" },
+  primaryAddButtonText: { color: "#FFFFFF", fontSize: 17, fontWeight: "900" },
+  reportHeader: { flexDirection: "row-reverse", alignItems: "center", gap: 10 },
+  reportChevron: { color: C.teal, fontSize: 26, fontWeight: "900", width: 30, textAlign: "center" },
+  reportHint: { color: C.muted, fontSize: 12, textAlign: "right", marginTop: 3 },
   quickAddGrid: {
     flexDirection: "row-reverse",
     flexWrap: "wrap",

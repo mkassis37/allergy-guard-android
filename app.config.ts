@@ -1,11 +1,11 @@
 import type { ExpoConfig } from "expo/config";
 
-const version = "0.8.8";
+const version = "0.9.0";
 const [major, minor, patch] = version.split(".").map(Number);
 const versionCode = major * 10000 + minor * 100 + patch;
 
 const config: ExpoConfig = {
-  name: "Allergy & Health Traker",
+  name: "Allergy & Health Tracker",
   slug: "allergy-guard-android",
   owner: "malak-new",
   version,
@@ -22,6 +22,7 @@ const config: ExpoConfig = {
   android: {
     package: "com.mkassis37.allergyguard",
     versionCode,
+    allowBackup: false,
     edgeToEdgeEnabled: true,
     adaptiveIcon: {
       backgroundColor: "#E8F4F5",
@@ -39,6 +40,10 @@ const config: ExpoConfig = {
   },
   plugins: [
     "expo-router",
+    [
+      "expo-secure-store",
+      { configureAndroidBackup: true },
+    ],
     [
       "expo-local-authentication",
       {

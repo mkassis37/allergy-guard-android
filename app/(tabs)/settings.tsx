@@ -1,4 +1,5 @@
 import Constants from "expo-constants";
+import * as LocalAuthentication from "expo-local-authentication";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -14,7 +15,11 @@ import {
 import { ScreenContainer } from "@/components/screen-container";
 import { useGithubUpdater } from "@/hooks/use-github-updater";
 import { useAllergy } from "@/lib/allergy-store";
-import { pickLocalBackup, shareLocalBackup } from "@/lib/device-backup";
+import {
+  pickLocalBackup,
+  restoreLocalBackupAttachments,
+  shareLocalBackup,
+} from "@/lib/device-backup";
 import {
   getBiometricLockEnabled,
   setBiometricLockEnabled,
@@ -50,11 +55,12 @@ function formatDate(value: string) {
 
 export default function SettingsScreen() {
   const { checkNow } = useGithubUpdater({ autoCheck: false });
-  const { snapshot, restoreSnapshot, autoBackupSavedAt } = useAllergy();
+  const { snapshot, restoreSnapshot, autoBackupSavedAt, storageError } = useAllergy();
   const [sharing, setSharing] = useState(false);
   const [restoring, setRestoring] = useState(false);
   const [checking, setChecking] = useState(false);
   const [backupSheetVisible, setBackupSheetVisible] = useState(false);
+  const [backupPassword, setBackupPassword] = useState("");
   const [biometricEnabled, setBiometricEnabled] = useState(false);
   const [governmentNumber, setGovernmentNumber] = useState(
     DEFAULT_GOVERNMENT_EMERGENCY_NUMBER,
@@ -91,24 +97,44 @@ export default function SettingsScreen() {
 
   const toggleBiometricLock = async () => {
     const next = !biometricEnabled;
+    if (next) {
+      const hasHardware = await LocalAuthentication.hasHardwareAsync();
+      const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+      if (!hasHardware || !isEnrolled) {
+        Alert.alert(
+          "البصمة غير جاهزة",
+          "سجّل بصمة أو تعرّفًا على الوجه في إعدادات الجهاز أولًا.",
+        );
+        return;
+      }
+      const confirmation = await LocalAuthentication.authenticateAsync({
+        promptMessage: "تأكيد تفعيل القفل الحيوي",
+        cancelLabel: "إلغاء",
+      });
+      if (!confirmation.success) return;
+    }
     await setBiometricLockEnabled(next);
     setBiometricEnabled(next);
     Alert.alert(
       next ? "تم تفعيل القفل" : "تم إيقاف القفل",
       next
-        ? "سيطلب التطبيق البصمة أو التعرف على الوجه بعد خروجه للخلفية لمدة دقيقة."
+        ? "سيطلب التطبيق المصادقة عند فتحه وبعد بقائه في الخلفية لمدة دقيقة."
         : "لن يطلب التطبيق مصادقة حيوية عند العودة إليه.",
     );
   };
 
   const shareBackup = async () => {
     if (sharing) return;
+    if (backupPassword.trim().length < 8) {
+      Alert.alert("كلمة المرور قصيرة", "استخدم 8 أحرف على الأقل للنسخة المشفرة.");
+      return;
+    }
     setSharing(true);
     try {
-      const result = await shareLocalBackup(snapshot);
+      const result = await shareLocalBackup(snapshot, backupPassword);
       Alert.alert(
-        "تم تجهيز النسخة",
-        `اختر Google Drive أو WhatsApp أو أي تطبيق آخر من نافذة المشاركة.\n\nاسم الملف: ${result.filename}`,
+        "تم تجهيز النسخة المشفرة",
+        `تشمل ${snapshot.patients.length} ملف(ات) و${result.attachmentCount} مرفق(ات). احتفظ بكلمة المرور؛ لن يمكن استعادة النسخة دونها.\n\nاسم الملف: ${result.filename}`,
       );
     } catch (error) {
       Alert.alert(
@@ -124,24 +150,27 @@ export default function SettingsScreen() {
     if (restoring) return;
     setRestoring(true);
     try {
-      const result = await pickLocalBackup();
+      const result = await pickLocalBackup(backupPassword);
       if (!result) return;
-      const patientCount = result.data.patients.length;
+      const backup = result.backup;
+      const patientCount = backup.data.patients.length;
       Alert.alert(
         "استرجاع النسخة؟",
-        `تاريخ النسخة: ${formatDate(result.exportedAt)}\nعدد المرضى: ${patientCount}\n\nسيتم استبدال البيانات الحالية على هذا الجهاز.`,
+        `تاريخ النسخة: ${formatDate(backup.exportedAt)}\nعدد المرضى: ${patientCount}\nعدد المرفقات: ${backup.attachments.length}\n${result.encrypted ? "النسخة مشفرة." : "تنبيه: هذه نسخة قديمة غير مشفرة."}\n\nسيتم استبدال البيانات الحالية على هذا الجهاز.`,
         [
           { text: "إلغاء", style: "cancel" },
           {
             text: "استرجاع الآن",
             style: "destructive",
-            onPress: () => {
+            onPress: async () => {
               setRestoring(true);
               try {
-                restoreSnapshot(result.data);
+                const restored = await restoreLocalBackupAttachments(backup);
+                restoreSnapshot(restored);
+                setBackupPassword("");
                 Alert.alert(
                   "تم الاسترجاع",
-                  "تمت استعادة المرضى والسجلات بنجاح.",
+                  `تمت استعادة ${patientCount} ملف(ات) و${backup.attachments.length} مرفق(ات).`,
                 );
               } catch (error) {
                 Alert.alert(
@@ -188,6 +217,13 @@ export default function SettingsScreen() {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
+        {storageError ? (
+          <View style={styles.note}>
+            <Text style={styles.noteText}>
+              تعذر فتح البيانات المشفرة: {storageError} لم يتم حذف النسخة القديمة أو استبدالها. لا تحذف بيانات التطبيق؛ تواصل مع الدعم قبل أي إعادة تثبيت.
+            </Text>
+          </View>
+        ) : null}
         <Text style={styles.kicker}>التحكم بالتطبيق</Text>
         <Text style={styles.title}>الإعدادات</Text>
 
@@ -311,9 +347,19 @@ export default function SettingsScreen() {
                 <Text style={styles.sheetTitle}>النسخ والحماية</Text>
               </View>
               <Text style={styles.sheetHint}>
-                الحفظ التلقائي محلي على الجهاز، أما النسخة اليدوية فتُرسل عبر
-                نافذة المشاركة.
+                النسخة اليدوية مشفرة بكلمة مرور، وتشمل ملفات المرضى والمرفقات الطبية. استخدم كلمة المرور نفسها عند الاستعادة واحتفظ بها في مكان آمن.
               </Text>
+              <TextInput
+                value={backupPassword}
+                onChangeText={setBackupPassword}
+                placeholder="كلمة مرور النسخة (8 أحرف على الأقل)"
+                placeholderTextColor="#8795A8"
+                secureTextEntry
+                autoCapitalize="none"
+                autoCorrect={false}
+                textAlign="right"
+                style={styles.passwordInput}
+              />
               <Pressable
                 onPress={shareBackup}
                 disabled={sharing}
@@ -330,7 +376,7 @@ export default function SettingsScreen() {
                   </View>
                 ) : (
                   <Text style={styles.jsonButtonText}>
-                    إنشاء نسخة JSON ومشاركتها
+                    إنشاء نسخة مشفرة ومشاركة المرفقات
                   </Text>
                 )}
               </Pressable>
@@ -346,14 +392,14 @@ export default function SettingsScreen() {
                 {restoring ? (
                   <ActivityIndicator color="#FFFFFF" />
                 ) : (
-                  <Text style={styles.jsonButtonText}>استعادة نسخة JSON</Text>
+                  <Text style={styles.jsonButtonText}>استعادة نسخة مشفرة أو قديمة</Text>
                 )}
               </Pressable>
               <View style={styles.statusBadge}>
                 <Text style={styles.autoBackupStatus}>
                   {autoBackupSavedAt
-                    ? `تم الحفظ التلقائي محليًا: ${formatDate(autoBackupSavedAt)}`
-                    : "سيتم حفظ نسخة تلقائية محليًا كل 15 دقيقة أثناء استخدام التطبيق."}
+                    ? `تم الحفظ التلقائي المشفر محليًا: ${formatDate(autoBackupSavedAt)}`
+                    : "سيتم حفظ نسخة تلقائية مشفرة محليًا كل 15 دقيقة أثناء استخدام التطبيق."}
                 </Text>
               </View>
             </View>
@@ -451,6 +497,17 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "900",
     textAlign: "center",
+  },
+  passwordInput: {
+    minHeight: 54,
+    borderRadius: 13,
+    borderWidth: 1,
+    borderColor: palette.line,
+    backgroundColor: "#FFFFFF",
+    paddingHorizontal: 14,
+    color: palette.navy,
+    fontSize: 16,
+    marginBottom: 12,
   },
   jsonCreateButton: {
     backgroundColor: "#DDF7F4",

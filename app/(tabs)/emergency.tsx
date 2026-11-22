@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { router } from "expo-router";
 import {
   Alert,
   Linking,
@@ -17,7 +18,6 @@ import {
 import { ScreenContainer } from "@/components/screen-container";
 import { FormActionBar } from "@/components/form-action-bar";
 import { useAllergy } from "@/lib/allergy-store";
-import { exportBackup, importJsonBackup } from "@/lib/backup";
 import { getGovernmentEmergencyNumber } from "@/lib/emergency-settings";
 
 const palette = {
@@ -32,7 +32,7 @@ const palette = {
 };
 
 export default function EmergencyScreen() {
-  const { records, profile, saveProfile, replaceData } = useAllergy();
+  const { records, profile, saveProfile } = useAllergy();
   const [editing, setEditing] = useState(false);
   const [doctorMode, setDoctorMode] = useState(false);
   const [previewVisible, setPreviewVisible] = useState(false);
@@ -55,79 +55,33 @@ export default function EmergencyScreen() {
   const severeAllergies = allergies.filter((item) => item.severity === "شديدة");
   const [draft, setDraft] = useState(profile);
   const shareCard = async () => {
+    const medicineAllergies = allergies.filter((r) => r.kind === "medicine-allergy");
     const lines = [
-      "بطاقة الطوارئ الطبية — Allergy & Health Traker",
+      doctorMode
+        ? "بطاقة طوارئ طبية مختصرة للطبيب — Allergy & Health Tracker"
+        : "بطاقة الطوارئ الطبية — Allergy & Health Tracker",
       `الاسم: ${profile.fullName || "غير مسجل"}`,
-      `الأدوية المسببة: ${
-        allergies
-          .filter((r) => r.kind === "medicine-allergy")
-          .map(
-            (r) =>
-              `${r.name}${r.activeIngredient ? ` (${r.activeIngredient})` : ""}${r.dosage ? ` — ${r.dosage}` : ""}${r.frequency ? `، ${r.frequency}` : ""}`,
-          )
-          .join("، ") || "لا يوجد"
-      }`,
-      `الأطعمة المسببة: ${
-        allergies
-          .filter((r) => r.kind === "food-allergy")
-          .map((r) => r.name)
-          .join("، ") || "لا يوجد"
-      }`,
-      `حساسيات أخرى: ${
-        allergies
-          .filter((r) => r.kind === "other-allergy")
-          .map((r) => `${r.name}${r.severity ? ` (${r.severity})` : ""}`)
-          .join("، ") || "لا يوجد"
-      }`,
-      `الأدوية / العلاجات المسجلة: ${medicines.map((r) => `${r.name}${r.activeIngredient ? ` (${r.activeIngredient})` : ""}${r.dosage ? ` — ${r.dosage}` : ""}${r.frequency ? `، ${r.frequency}` : ""}`).join("، ") || "لا يوجد"}`,
-      `أدوية تم تحملها: ${tolerated.map((r) => `${r.name}${r.activeIngredient ? ` (${r.activeIngredient})` : ""}${r.dosage ? ` — ${r.dosage}` : ""}${r.frequency ? `، ${r.frequency}` : ""}`).join("، ") || "لا يوجد"}`,
-      `جهة الطوارئ: ${profile.emergencyContact || "غير مسجل"}`,
-      "هذه المعلومات سجل شخصي وليست تشخيصًا طبيًا.",
+      `فصيلة الدم: ${profile.bloodType || "غير مسجلة"}`,
+      `رقم الهاتف: ${profile.phone || "غير مسجل"}`,
+      `جهة الاتصال للطوارئ: ${profile.emergencyContact || "غير مسجلة"}`,
+      `الحساسيات الشديدة: ${severeAllergies.map((r) => `${r.name}${r.activeIngredient ? ` (${r.activeIngredient})` : ""}`).join("، ") || "لا توجد حساسية شديدة مسجلة"}`,
+      `الحساسيات الدوائية: ${medicineAllergies.map((r) => `${r.name}${r.activeIngredient ? ` (${r.activeIngredient})` : ""}${r.severity ? ` — الشدة: ${r.severity}` : ""}`).join("، ") || "لا يوجد"}`,
+      `الأدوية الحالية: ${medicines.map((r) => `${r.name}${r.activeIngredient ? ` (${r.activeIngredient})` : ""}${r.dosage ? ` — ${r.dosage}` : ""}${r.frequency ? `، ${r.frequency}` : ""}`).join("، ") || "لا يوجد"}`,
     ];
+    if (!doctorMode) {
+      lines.push(
+        `الأطعمة المسببة: ${allergies.filter((r) => r.kind === "food-allergy").map((r) => `${r.name}${r.severity ? ` (${r.severity})` : ""}`).join("، ") || "لا يوجد"}`,
+        `حساسيات أخرى: ${allergies.filter((r) => r.kind === "other-allergy").map((r) => `${r.name}${r.severity ? ` (${r.severity})` : ""}`).join("، ") || "لا يوجد"}`,
+        `أدوية تم تحملها: ${tolerated.map((r) => r.name).join("، ") || "لا يوجد"}`,
+      );
+    }
+    lines.push("يرجى التحقق من هذه المعلومات مع المريض؛ هذه البطاقة سجل شخصي وليست تشخيصًا طبيًا.");
     await Share.share({ message: lines.join("\n") });
   };
   const save = () => {
     saveProfile(draft);
     setEditing(false);
     Alert.alert("تم الحفظ", "تم تحديث بيانات بطاقة الطوارئ.");
-  };
-  const exportFile = async (format: "json" | "csv") => {
-    try {
-      await exportBackup(profile, records, format);
-    } catch (error) {
-      Alert.alert(
-        "تعذر التصدير",
-        error instanceof Error ? error.message : "حدث خطأ غير متوقع.",
-      );
-    }
-  };
-  const importFile = async () => {
-    try {
-      const backup = await importJsonBackup();
-      if (!backup) return;
-      Alert.alert(
-        "استبدال البيانات؟",
-        `سيتم استيراد ${backup.records.length} سجلًا واستبدال البيانات الحالية.`,
-        [
-          { text: "إلغاء", style: "cancel" },
-          {
-            text: "استيراد",
-            onPress: () => {
-              replaceData(backup.records, backup.profile);
-              Alert.alert(
-                "تم الاستيراد",
-                "تمت استعادة النسخة الاحتياطية بنجاح.",
-              );
-            },
-          },
-        ],
-      );
-    } catch (error) {
-      Alert.alert(
-        "تعذر الاستيراد",
-        error instanceof Error ? error.message : "الملف غير صالح أو تالف.",
-      );
-    }
   };
   return (
     <ScreenContainer
@@ -246,20 +200,24 @@ export default function EmergencyScreen() {
                 </View>
               ))
           )}
-          <Text style={styles.fieldHeading}>الأطعمة أو المكونات المسببة</Text>
-          <Text style={styles.foodText}>
-            {allergies
-              .filter((r) => r.kind === "food-allergy")
-              .map((r) => r.name)
-              .join("، ") || "لا توجد سجلات"}
-          </Text>
-          <Text style={styles.fieldHeading}>حساسيات أخرى</Text>
-          <Text style={styles.foodText}>
-            {allergies
-              .filter((r) => r.kind === "other-allergy")
-              .map((r) => `${r.name}${r.severity ? ` (${r.severity})` : ""}`)
-              .join("، ") || "لا توجد سجلات"}
-          </Text>
+          {!doctorMode ? (
+            <>
+                        <Text style={styles.fieldHeading}>الأطعمة أو المكونات المسببة</Text>
+                        <Text style={styles.foodText}>
+                          {allergies
+                            .filter((r) => r.kind === "food-allergy")
+                            .map((r) => r.name)
+                            .join("، ") || "لا توجد سجلات"}
+                        </Text>
+                        <Text style={styles.fieldHeading}>حساسيات أخرى</Text>
+                        <Text style={styles.foodText}>
+                          {allergies
+                            .filter((r) => r.kind === "other-allergy")
+                            .map((r) => `${r.name}${r.severity ? ` (${r.severity})` : ""}`)
+                            .join("، ") || "لا توجد سجلات"}
+                        </Text>
+            </>
+          ) : null}
           <Text style={styles.fieldHeading}>الأدوية / العلاجات المسجلة</Text>
           <Text style={styles.foodText}>
             {medicines
@@ -269,15 +227,19 @@ export default function EmergencyScreen() {
               )
               .join("، ") || "لا توجد سجلات"}
           </Text>
-          <Text style={styles.fieldHeading}>أدوية تم تحملها دون حساسية</Text>
-          <Text style={styles.foodText}>
-            {tolerated
-              .map(
-                (r) =>
-                  `${r.name}${r.activeIngredient ? ` (${r.activeIngredient})` : ""}${r.dosage ? ` — ${r.dosage}` : ""}${r.frequency ? `، ${r.frequency}` : ""}`,
-              )
-              .join("، ") || "لا توجد سجلات"}
-          </Text>
+          {!doctorMode ? (
+            <>
+              <Text style={styles.fieldHeading}>أدوية تم تحملها دون حساسية</Text>
+              <Text style={styles.foodText}>
+                {tolerated
+                  .map(
+                    (r) =>
+                      `${r.name}${r.activeIngredient ? ` (${r.activeIngredient})` : ""}${r.dosage ? ` — ${r.dosage}` : ""}${r.frequency ? `، ${r.frequency}` : ""}`,
+                  )
+                  .join("، ") || "لا توجد سجلات"}
+              </Text>
+            </>
+          ) : null}
         </View>
         <View style={styles.actions}>
           <Pressable
@@ -296,29 +258,18 @@ export default function EmergencyScreen() {
             <Text style={styles.editText}>تعديل البيانات</Text>
           </Pressable>
         </View>
-        <View style={styles.backupSection}>
-          <Text style={styles.backupTitle}>النسخ الاحتياطي</Text>
+        <Pressable
+          onPress={() => router.push("/(tabs)/settings" as any)}
+          style={({ pressed }) => [
+            styles.backupSection,
+            pressed && { opacity: 0.8 },
+          ]}
+        >
+          <Text style={styles.backupTitle}>النسخ الاحتياطي المشفر</Text>
           <Text style={styles.backupHint}>
-            أنشئ ملفًا محليًا وشاركه مباشرة إلى Drive أو WhatsApp أو أي مكان.
+            إنشاء نسخة بكلمة مرور تشمل جميع ملفات المرضى والمرفقات، أو استعادة نسخة سابقة. انتقل إلى إعدادات التطبيق لإدارة النسخ.
           </Text>
-          <View style={styles.backupActions}>
-            <Pressable
-              onPress={() => exportFile("json")}
-              style={styles.backupButton}
-            >
-              <Text style={styles.backupButtonText}>تصدير ومشاركة</Text>
-            </Pressable>
-            <Pressable
-              onPress={() => exportFile("csv")}
-              style={styles.backupButton}
-            >
-              <Text style={styles.backupButtonText}>تصدير Excel</Text>
-            </Pressable>
-            <Pressable onPress={importFile} style={styles.backupButton}>
-              <Text style={styles.backupButtonText}>استيراد من ملف</Text>
-            </Pressable>
-          </View>
-        </View>
+        </Pressable>
         <View style={styles.note}>
           <Text style={styles.noteText}>
             هذه البطاقة سجل شخصي للمعلومات وليست تشخيصًا طبيًا. في حالة صعوبة

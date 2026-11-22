@@ -1,9 +1,11 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { readEncryptedJson, writeEncryptedJson } from "./secure-local-storage";
 import React, {
   createContext,
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import {
@@ -79,6 +81,7 @@ type StoreValue = {
   snapshot: AllergySnapshot;
   autoBackupSavedAt: string | null;
   hydrated: boolean;
+  storageError: string | null;
   addPatient: (input: PatientInput) => string;
   updatePatient: (id: string, input: PatientInput) => void;
   deletePatient: (id: string) => void;
@@ -94,6 +97,7 @@ type StoreValue = {
   restoreSnapshot: (snapshot: unknown) => void;
 };
 
+const STORAGE_KEY_V3 = "allergy-guard-data-v3-encrypted";
 const STORAGE_KEY_V2 = "allergy-guard-data-v2";
 const STORAGE_KEY_V1 = "allergy-guard-data-v1";
 
@@ -232,43 +236,81 @@ export function AllergyProvider({ children }: { children: React.ReactNode }) {
   const [patients, setPatients] = useState<Patient[]>([]);
   const [activePatientId, setActivePatientId] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
+  const [storageError, setStorageError] = useState<string | null>(null);
   const [autoBackupSavedAt, setAutoBackupSavedAt] = useState<string | null>(
     null,
   );
+  const persistenceQueue = useRef<Promise<void>>(Promise.resolve());
 
   useEffect(() => {
     let mounted = true;
 
     (async () => {
       try {
-        const rawV2 = await AsyncStorage.getItem(STORAGE_KEY_V2);
-        if (rawV2) {
-          const parsed = JSON.parse(rawV2) as {
-            patients?: unknown;
-            activePatientId?: unknown;
-          };
-          const restored = normalizePatients(parsed.patients);
+        const encrypted = await readEncryptedJson<{
+          patients?: unknown;
+          activePatientId?: unknown;
+        }>(STORAGE_KEY_V3);
+        if (encrypted) {
+          if (!Array.isArray(encrypted.patients)) {
+            throw new Error("البيانات المشفرة لا تحتوي على قائمة مرضى صالحة.");
+          }
+          const restored = normalizePatients(encrypted.patients);
           if (!mounted) return;
           setPatients(restored);
           const requested =
-            typeof parsed.activePatientId === "string"
-              ? parsed.activePatientId
+            typeof encrypted.activePatientId === "string"
+              ? encrypted.activePatientId
               : null;
           setActivePatientId(
             requested && restored.some((p) => p.id === requested)
               ? requested
               : (restored[0]?.id ?? null),
           );
+          await AsyncStorage.multiRemove([STORAGE_KEY_V2, STORAGE_KEY_V1]);
           return;
         }
 
-        // Migration from the original single-patient storage.
+        // One-time migration: encrypt existing plaintext records before deleting them.
+        const rawV2 = await AsyncStorage.getItem(STORAGE_KEY_V2);
+        if (rawV2) {
+          const parsed = JSON.parse(rawV2) as {
+            patients?: unknown;
+            activePatientId?: unknown;
+          };
+          if (!Array.isArray(parsed.patients)) {
+            throw new Error("النسخة القديمة لا تحتوي على قائمة مرضى صالحة؛ لم يتم حذفها.");
+          }
+          const restored = normalizePatients(parsed.patients);
+          const requested =
+            typeof parsed.activePatientId === "string"
+              ? parsed.activePatientId
+              : null;
+          const migrated = {
+            schemaVersion: 2 as const,
+            patients: restored,
+            activePatientId:
+              requested && restored.some((p) => p.id === requested)
+                ? requested
+                : (restored[0]?.id ?? null),
+          };
+          await writeEncryptedJson(STORAGE_KEY_V3, migrated);
+          if (!mounted) return;
+          setPatients(restored);
+          setActivePatientId(migrated.activePatientId);
+          await AsyncStorage.multiRemove([STORAGE_KEY_V2, STORAGE_KEY_V1]);
+          return;
+        }
+
         const rawV1 = await AsyncStorage.getItem(STORAGE_KEY_V1);
         if (rawV1) {
           const parsed = JSON.parse(rawV1) as {
             records?: unknown;
             profile?: unknown;
           };
+          if (!Array.isArray(parsed.records)) {
+            throw new Error("البيانات القديمة لا تحتوي على سجلات صالحة؛ لم يتم حذفها.");
+          }
           const profile = normalizeProfile(parsed.profile);
           const now = new Date().toISOString();
           const patient: Patient = {
@@ -278,12 +320,26 @@ export function AllergyProvider({ children }: { children: React.ReactNode }) {
             createdAt: now,
             updatedAt: now,
           };
+          const migrated = {
+            schemaVersion: 2 as const,
+            patients: [patient],
+            activePatientId: patient.id,
+          };
+          await writeEncryptedJson(STORAGE_KEY_V3, migrated);
           if (!mounted) return;
           setPatients([patient]);
           setActivePatientId(patient.id);
+          await AsyncStorage.removeItem(STORAGE_KEY_V1);
         }
       } catch (error) {
-        console.warn("Failed to hydrate allergy store:", error);
+        console.warn("Failed to hydrate encrypted allergy store:", error);
+        if (mounted) {
+          setStorageError(
+            error instanceof Error
+              ? error.message
+              : "تعذر فتح البيانات المحمية. لم يتم حذف البيانات القديمة.",
+          );
+        }
       } finally {
         if (mounted) setHydrated(true);
       }
@@ -295,28 +351,29 @@ export function AllergyProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (!hydrated) return;
+    if (!hydrated || storageError) return;
     const snapshot: AllergySnapshot = {
       schemaVersion: 2,
       patients,
       activePatientId,
     };
     const persist = async () => {
-      await AsyncStorage.setItem(STORAGE_KEY_V2, JSON.stringify(snapshot));
+      await writeEncryptedJson(STORAGE_KEY_V3, snapshot);
       const autoBackup = createAutoBackupFile(snapshot);
-      await AsyncStorage.setItem(
-        AUTO_BACKUP_STORAGE_KEY,
-        JSON.stringify(autoBackup),
-      );
+      await writeEncryptedJson(AUTO_BACKUP_STORAGE_KEY, autoBackup);
+      await AsyncStorage.multiRemove([STORAGE_KEY_V2, STORAGE_KEY_V1]);
       setAutoBackupSavedAt(autoBackup.savedAt);
     };
-    persist().catch((error) =>
-      console.warn("Failed to persist allergy store:", error),
-    );
-  }, [hydrated, patients, activePatientId]);
+    persistenceQueue.current = persistenceQueue.current
+      .catch(() => undefined)
+      .then(persist)
+      .catch((error) => {
+        console.warn("Failed to persist encrypted allergy store:", error);
+      });
+  }, [hydrated, storageError, patients, activePatientId]);
 
   useEffect(() => {
-    if (!hydrated) return;
+    if (!hydrated || storageError) return;
     const interval = setInterval(async () => {
       const snapshot: AllergySnapshot = {
         schemaVersion: 2,
@@ -325,17 +382,14 @@ export function AllergyProvider({ children }: { children: React.ReactNode }) {
       };
       const autoBackup = createAutoBackupFile(snapshot);
       try {
-        await AsyncStorage.setItem(
-          AUTO_BACKUP_STORAGE_KEY,
-          JSON.stringify(autoBackup),
-        );
+        await writeEncryptedJson(AUTO_BACKUP_STORAGE_KEY, autoBackup);
         setAutoBackupSavedAt(autoBackup.savedAt);
       } catch (error) {
-        console.warn("Failed to create automatic local backup:", error);
+        console.warn("Failed to create encrypted automatic local backup:", error);
       }
     }, AUTO_BACKUP_INTERVAL_MS);
     return () => clearInterval(interval);
-  }, [hydrated, patients, activePatientId]);
+  }, [hydrated, storageError, patients, activePatientId]);
 
   const activePatient = useMemo(
     () => patients.find((patient) => patient.id === activePatientId) ?? null,
@@ -361,6 +415,7 @@ export function AllergyProvider({ children }: { children: React.ReactNode }) {
       snapshot: { schemaVersion: 2, patients, activePatientId },
       autoBackupSavedAt,
       hydrated,
+      storageError,
       addPatient: (input) => {
         const now = new Date().toISOString();
         const id = makeId("patient");
@@ -483,10 +538,11 @@ export function AllergyProvider({ children }: { children: React.ReactNode }) {
           patients?: unknown;
           activePatientId?: unknown;
         };
-        const restored = normalizePatients(source.patients);
         if (!Array.isArray(source.patients)) {
           throw new Error("النسخة الاحتياطية لا تحتوي على قائمة مرضى صالحة.");
         }
+        const restored = normalizePatients(source.patients);
+        setStorageError(null);
         const requested =
           typeof source.activePatientId === "string"
             ? source.activePatientId
@@ -499,7 +555,7 @@ export function AllergyProvider({ children }: { children: React.ReactNode }) {
         );
       },
     };
-  }, [patients, activePatientId, activePatient, autoBackupSavedAt, hydrated]);
+  }, [patients, activePatientId, activePatient, autoBackupSavedAt, hydrated, storageError]);
 
   return (
     <StoreContext.Provider value={value}>{children}</StoreContext.Provider>
