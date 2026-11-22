@@ -129,3 +129,20 @@ A feature is not ready to merge until:
 - the PR documents test results and known limitations.
 
 No direct commits to `main`; merge only reviewed, green pull requests.
+
+## 11. Current implementation status (2026-11-22)
+
+Implemented on the feature branch:
+- Additive patient schema v3 and normalization defaults for seven new collections.
+- Encrypted pre-v3 recovery snapshot before upgrading existing encrypted or legacy plaintext snapshots.
+- Device-backup validation upgrades embedded schema v2 snapshots to schema v3 while retaining the version-2 encrypted backup envelope.
+- Medication, health tracking, appointment and consolidated More screens.
+- Five-tab navigation: Home, Medications, Health, Appointments, More; legacy records, patients, emergency and settings routes remain reachable from More.
+- Local notification reconciliation for enabled medication schedules and appointment reminders. The implementation uses generic lock-screen text and a capped rolling 14-day medication schedule window (maximum 180 pending health reminders across family profiles). It resynchronizes when the app loads or patient data changes. It does not guarantee exact delivery or background replenishment while the app is never opened.
+- Device backup attachment collection/restoration includes legacy record attachments plus appointment and lab-result attachments.
+
+Still pending:
+- Google Drive OAuth connection and upload. A Google Cloud OAuth client ID and selected Drive storage scope must be configured before account linking can be completed. No credentials should be committed to source.
+- Daily cloud upload scheduling at/after 07:00, retry/status UI, and encrypted cloud restore.
+- Full charts, richer medical reports, and physical-device battery/security verification.
+- Final Android build and full CI verification for the latest head commit.
