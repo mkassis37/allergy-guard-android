@@ -34,6 +34,7 @@ import { exportRecordsPdf } from "@/lib/pdf-export";
 import { exportBackup } from "@/lib/backup";
 import * as DocumentPicker from "expo-document-picker";
 import * as FileSystem from "expo-file-system/legacy";
+import { decryptForDevice, encryptForDevice } from "@/lib/secure-local-storage";
 
 const C = {
   navy: "#173B6C",
@@ -328,6 +329,36 @@ export default function RecordsScreen() {
     setEditorVisible(true);
   };
 
+  const openMedicalAttachment = async (uri: string) => {
+    try {
+      if (!uri.endsWith(".agenc")) {
+        await Linking.openURL(uri);
+        return;
+      }
+      const raw = await FileSystem.readAsStringAsync(uri, {
+        encoding: FileSystem.EncodingType.UTF8,
+      });
+      const payload = await decryptForDevice<{
+        base64: string;
+        fileName: string;
+        mimeType: string;
+      }>(raw);
+      const cacheDirectory = FileSystem.cacheDirectory;
+      if (!cacheDirectory) throw new Error("مجلد المعاينة المؤقت غير متاح.");
+      const extension = payload.fileName.split(".").pop()?.replace(/[^a-z0-9]/gi, "") || "bin";
+      const previewUri = `${cacheDirectory}medical-preview-${Date.now()}.${extension}`;
+      await FileSystem.writeAsStringAsync(previewUri, payload.base64, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+      await Linking.openURL(previewUri);
+    } catch (error) {
+      Alert.alert(
+        "تعذر فتح المرفق",
+        error instanceof Error ? error.message : "تعذر فك تشفير الملف أو فتحه.",
+      );
+    }
+  };
+
   const pickMedicalAttachment = async () => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
@@ -338,24 +369,33 @@ export default function RecordsScreen() {
       if (result.canceled) return;
       const directory = FileSystem.documentDirectory
         ? `${FileSystem.documentDirectory}medical-attachments/`
-        : FileSystem.cacheDirectory;
+        : null;
       if (!directory) {
-        Alert.alert("تعذر حفظ المرفق", "مساحة حفظ الملفات غير متاحة على هذا الجهاز.");
+        Alert.alert("تعذر حفظ المرفق", "مساحة حفظ الملفات الدائمة غير متاحة على هذا الجهاز.");
         return;
       }
-      if (FileSystem.documentDirectory) {
-        const info = await FileSystem.getInfoAsync(directory);
-        if (!info.exists) {
-          await FileSystem.makeDirectoryAsync(directory, { intermediates: true });
-        }
+      const info = await FileSystem.getInfoAsync(directory);
+      if (!info.exists) {
+        await FileSystem.makeDirectoryAsync(directory, { intermediates: true });
       }
       const savedUris = await Promise.all(
         result.assets.map(async (asset, index) => {
-          const safeName = (asset.name || "medical-file")
+          const fileName = asset.name || "medical-file";
+          const base64 = await FileSystem.readAsStringAsync(asset.uri, {
+            encoding: FileSystem.EncodingType.Base64,
+          });
+          const encrypted = await encryptForDevice({
+            fileName,
+            mimeType: asset.mimeType || "application/octet-stream",
+            base64,
+          });
+          const safeName = fileName
             .replace(/[^\w.\-\u0600-\u06FF]/g, "_")
             .slice(-80);
-          const destination = `${directory}${Date.now()}-${index}-${safeName}`;
-          await FileSystem.copyAsync({ from: asset.uri, to: destination });
+          const destination = `${directory}${Date.now()}-${index}-${safeName}.agenc`;
+          await FileSystem.writeAsStringAsync(destination, encrypted, {
+            encoding: FileSystem.EncodingType.UTF8,
+          });
           return destination;
         }),
       );
@@ -363,7 +403,7 @@ export default function RecordsScreen() {
     } catch (error) {
       Alert.alert(
         "تعذر إضافة المرفق",
-        error instanceof Error ? error.message : "حدث خطأ أثناء حفظ الملف.",
+        error instanceof Error ? error.message : "حدث خطأ أثناء تشفير الملف وحفظه.",
       );
     }
   };
@@ -828,7 +868,7 @@ export default function RecordsScreen() {
                     {viewRecord.attachmentUris.map((uri, index) => (
                       <Pressable
                         key={`${uri}-${index}`}
-                        onPress={() => void Linking.openURL(uri)}
+                        onPress={() => void openMedicalAttachment(uri)}
                         style={styles.attachmentLink}
                       >
                         <Text style={styles.attachmentLinkText}>
@@ -1077,7 +1117,7 @@ export default function RecordsScreen() {
                     <Text style={styles.attachmentHint}>
                       {attachmentUris.length
                         ? `تم إرفاق ${attachmentUris.length} ملف(ات) محليًا`
-                        : "PDF أو صورة — تحفظ محليًا على الجهاز"}
+                        : "PDF أو صورة — تُشفّر وتحفظ محليًا على الجهاز"}
                     </Text>
                   </Pressable>
                 </>
