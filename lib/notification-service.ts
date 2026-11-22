@@ -82,7 +82,7 @@ export async function syncPatientHealthNotifications(
             data: { kind: "medication", patientId: patient.id, medicationId: medication.id, scheduleId: schedule.id },
             sound: "default",
           },
-          trigger: triggerDate,
+          trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: triggerDate },
         });
         scheduledCount += 1;
       }
@@ -92,7 +92,7 @@ export async function syncPatientHealthNotifications(
   for (const appointment of patient.appointments) {
     if (scheduledCount >= limit) break;
     if (appointment.status !== "scheduled") continue;
-    for (const minutes of appointment.reminderMinutes) {
+    for (const minutes of appointment.reminderMinutes ?? []) {
       if (scheduledCount >= limit) break;
       const triggerDate = new Date(new Date(appointment.startsAt).getTime() - minutes * 60_000);
       if (Number.isNaN(triggerDate.getTime()) || triggerDate <= now) continue;
