@@ -532,10 +532,11 @@ export function AllergyProvider({ children }: { children: React.ReactNode }) {
           patients?: unknown;
           activePatientId?: unknown;
         };
-        const restored = normalizePatients(source.patients);
         if (!Array.isArray(source.patients)) {
           throw new Error("النسخة الاحتياطية لا تحتوي على قائمة مرضى صالحة.");
         }
+        const restored = normalizePatients(source.patients);
+        setStorageError(null);
         const requested =
           typeof source.activePatientId === "string"
             ? source.activePatientId
