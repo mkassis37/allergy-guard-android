@@ -40,6 +40,28 @@ jobs:
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
 
+      - name: Persist refreshed pnpm lockfile on the feature branch
+        if: github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD_BRANCH: ${{ github.head_ref }}
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- pnpm-lock.yaml; then
+            echo "Lockfile already matches package.json."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add pnpm-lock.yaml
+          git commit -m "chore: refresh pnpm lockfile for security updates"
+          git push "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "HEAD:${HEAD_BRANCH}"
+          curl --fail --silent --show-error -X POST \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/actions/workflows/android-preview.yml/dispatches" \
+            -d "{\"ref\":\"${HEAD_BRANCH}\"}"
+
       - name: Verify required packages
         run: |
           node -e "require.resolve('expo-print/package.json'); require.resolve('expo-crypto/package.json'); require.resolve('expo-mail-composer/package.json'); require.resolve('expo-sharing/package.json'); require.resolve('expo-notifications/package.json'); require.resolve('expo-secure-store/package.json'); require.resolve('expo-local-authentication/package.json'); console.log('required packages are installed')"
