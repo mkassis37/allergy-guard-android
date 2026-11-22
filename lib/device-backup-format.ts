@@ -70,9 +70,15 @@ export function validateDeviceBackup(value: unknown): DeviceBackupFile {
       typeof attachment.fileName !== "string" ||
       typeof attachment.mimeType !== "string" ||
       typeof attachment.base64 !== "string" ||
+      attachment.base64.length === 0 ||
+      attachment.base64.length > 36 * 1024 * 1024 ||
       !/^[A-Za-z0-9+/]*={0,2}$/.test(attachment.base64)
     ) {
       throw new Error("تعذر التحقق من أحد المرفقات في النسخة.");
+    }
+    totalEncodedBytes += attachment.base64.length;
+    if (totalEncodedBytes > 84 * 1024 * 1024) {
+      throw new Error("حجم المرفقات في النسخة يتجاوز الحد الآمن للاستعادة.");
     }
     return {
       uri: attachment.uri,
