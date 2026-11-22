@@ -59,7 +59,8 @@ export function validateDeviceBackup(value: unknown): DeviceBackupFile {
   if (attachments.length > 200) {
     throw new Error("تحتوي النسخة على عدد مرفقات يتجاوز الحد المسموح.");
   }
-  let totalEncodedBytes = 0;\n  const normalizedAttachments = attachments.map((item) => {
+  let totalEncodedBytes = 0;
+  const normalizedAttachments = attachments.map((item) => {
     if (!item || typeof item !== "object") {
       throw new Error("بيانات أحد المرفقات غير صالحة.");
     }
