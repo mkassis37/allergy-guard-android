@@ -6,7 +6,7 @@ import {
 } from "../lib/backup-crypto";
 import { csvRows, makeBackupPayload } from "../lib/backup-serialization";
 import { validateBackup } from "../lib/backup-format";
-import { validateDeviceBackup } from "../lib/device-backup-format";
+import { validateDeviceBackup } from "../lib/device-backup-format";\nimport { decryptJsonWithKey, encryptJsonWithKey } from "../lib/secure-local-storage";
 import {
   AUTO_BACKUP_INTERVAL_MS,
   createAutoBackupFile,
@@ -60,7 +60,45 @@ describe("local backup export and import", () => {
     );
   });
 
-  it("creates a valid JSON payload for local export", () => {
+
+  it("encrypts local patient snapshots and rejects modified ciphertext", () => {
+    const key = new Uint8Array(32).fill(7);
+    const nonce = new Uint8Array(24).fill(3);
+    const secret = { patients: [{ id: "patient-1", fullName: "بيانات خاصة" }] };
+    const encrypted = encryptJsonWithKey(secret, key, nonce);
+    expect(encrypted).not.toContain("بيانات خاصة");
+    expect(decryptJsonWithKey(encrypted, key)).toEqual(secret);
+    const envelope = JSON.parse(encrypted);
+    envelope.ciphertext = `A${envelope.ciphertext.slice(1)}`;
+    expect(() => decryptJsonWithKey(JSON.stringify(envelope), key)).toThrow(
+      "تعذر فك تشفير البيانات المحلية",
+    );
+  });
+
+  it("validates and preserves encrypted-backup attachment payloads", () => {
+    const snapshot = {
+      schemaVersion: 2 as const,
+      patients: [],
+      activePatientId: null,
+    };
+    const result = validateDeviceBackup({
+      app: "allergy-guard-local-backup",
+      schemaVersion: 2,
+      exportedAt: "2026-11-22T00:00:00.000Z",
+      data: snapshot,
+      attachments: [
+        {
+          uri: "file:///medical/report.pdf",
+          fileName: "report.pdf",
+          mimeType: "application/pdf",
+          base64: "JVBERi0=",
+        },
+      ],
+    });
+    expect(result.attachments).toHaveLength(1);
+    expect(result.attachments[0].fileName).toBe("report.pdf");
+  });
+\n  it("creates a valid JSON payload for local export", () => {
     const payload = makeBackupPayload(profile, records);
     const restored = validateBackup(JSON.parse(JSON.stringify(payload)));
     expect(restored.app).toBe("allergy-guard");
