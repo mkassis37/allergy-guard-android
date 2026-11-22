@@ -18,6 +18,7 @@ jobs:
     timeout-minutes: 45
     permissions:
       contents: write
+      actions: write
     env:
       EXPO_PUBLIC_GITHUB_REPOSITORY: ${{ github.repository }}
 
