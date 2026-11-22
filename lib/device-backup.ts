@@ -12,7 +12,8 @@ import {
   decryptJsonPayload,
   encryptJsonPayload,
   isEncryptedBackup,
-} from "./backup-crypto";\nimport { decryptForDevice, encryptForDevice } from "./secure-local-storage";
+} from "./backup-crypto";
+import { decryptForDevice, encryptForDevice } from "./secure-local-storage";
 
 const backupFilename = () =>
   `AllergyGuard-Backup-${new Date().toISOString().replace(/[:.]/g, "-")}.agbackup`;
