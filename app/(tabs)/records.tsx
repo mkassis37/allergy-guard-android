@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";\nimport { useLocalSearchParams } from "expo-router";
+import { useEffect, useMemo, useState } from "react";
+import { useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   ActivityIndicator,
@@ -135,7 +136,8 @@ const kindOptions: KindOption[] = [
 ];
 
 const filters: Array<{ key: FilterKey; label: string }> = [
-  { key: "all", label: "الكل" },\n  { key: "allergies", label: "الحساسيات" },
+  { key: "all", label: "الكل" },
+  { key: "allergies", label: "الحساسيات" },
   ...kindOptions.map(({ key, label }) => ({ key, label })),
 ];
 
@@ -209,7 +211,8 @@ export default function RecordsScreen() {
     deleteRecord,
   } = useAllergy();
 
-  const [filter, setFilter] = useState<FilterKey>("all");\n  const [reportsExpanded, setReportsExpanded] = useState(false);
+  const [filter, setFilter] = useState<FilterKey>("all");
+  const [reportsExpanded, setReportsExpanded] = useState(false);
   const [query, setQuery] = useState("");
   const [viewRecord, setViewRecord] = useState<AllergyRecord | null>(null);
   const [editorVisible, setEditorVisible] = useState(false);
@@ -231,10 +234,19 @@ export default function RecordsScreen() {
   const [exporting, setExporting] = useState<"pdf" | "csv" | null>(null);
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {\n    const requested = routeParams.filter;\n    if (requested === "allergies" || requested === "all" || kindOptions.some((item) => item.key === requested)) {\n      setFilter((requested || "all") as FilterKey);\n      setQuery("");\n    }\n  }, [routeParams.filter]);\n\n  const shown = useMemo(() => {
+  useEffect(() => {
+    const requested = routeParams.filter;
+    if (requested === "allergies" || requested === "all" || kindOptions.some((item) => item.key === requested)) {
+      setFilter((requested || "all") as FilterKey);
+      setQuery("");
+    }
+  }, [routeParams.filter]);
+
+  const shown = useMemo(() => {
     const normalizedQuery = query.trim().toLocaleLowerCase("ar");
     return records.filter((item) => {
-      if (filter === "allergies" && !["medicine-allergy", "food-allergy", "other-allergy"].includes(item.kind)) return false;\n      if (filter !== "all" && filter !== "allergies" && item.kind !== filter) return false;
+      if (filter === "allergies" && !["medicine-allergy", "food-allergy", "other-allergy"].includes(item.kind)) return false;
+      if (filter !== "all" && filter !== "allergies" && item.kind !== filter) return false;
       if (!normalizedQuery) return true;
       return [
         item.name,
@@ -1312,7 +1324,16 @@ const styles = StyleSheet.create({
     textAlign: "right",
     marginBottom: 3,
   },
-  addSection: { backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: 20, padding: 16, marginBottom: 14, gap: 12 },\n  addSectionCopy: { alignItems: "flex-end" },\n  addSectionTitle: { color: C.navy, fontSize: 20, fontWeight: "900", textAlign: "right" },\n  addSectionHint: { color: C.muted, fontSize: 13, lineHeight: 20, textAlign: "right", marginTop: 4 },\n  primaryAddButton: { minHeight: 54, borderRadius: 15, backgroundColor: C.teal, alignItems: "center", justifyContent: "center" },\n  primaryAddButtonText: { color: "#FFFFFF", fontSize: 17, fontWeight: "900" },\n  reportHeader: { flexDirection: "row-reverse", alignItems: "center", gap: 10 },\n  reportChevron: { color: C.teal, fontSize: 26, fontWeight: "900", width: 30, textAlign: "center" },\n  reportHint: { color: C.muted, fontSize: 12, textAlign: "right", marginTop: 3 },\n  quickAddGrid: {
+  addSection: { backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: 20, padding: 16, marginBottom: 14, gap: 12 },
+  addSectionCopy: { alignItems: "flex-end" },
+  addSectionTitle: { color: C.navy, fontSize: 20, fontWeight: "900", textAlign: "right" },
+  addSectionHint: { color: C.muted, fontSize: 13, lineHeight: 20, textAlign: "right", marginTop: 4 },
+  primaryAddButton: { minHeight: 54, borderRadius: 15, backgroundColor: C.teal, alignItems: "center", justifyContent: "center" },
+  primaryAddButtonText: { color: "#FFFFFF", fontSize: 17, fontWeight: "900" },
+  reportHeader: { flexDirection: "row-reverse", alignItems: "center", gap: 10 },
+  reportChevron: { color: C.teal, fontSize: 26, fontWeight: "900", width: 30, textAlign: "center" },
+  reportHint: { color: C.muted, fontSize: 12, textAlign: "right", marginTop: 3 },
+  quickAddGrid: {
     flexDirection: "row-reverse",
     flexWrap: "wrap",
     gap: 10,
