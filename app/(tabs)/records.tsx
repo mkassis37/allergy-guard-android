@@ -32,6 +32,7 @@ import {
 import { exportRecordsPdf } from "@/lib/pdf-export";
 import { exportBackup } from "@/lib/backup";
 import * as DocumentPicker from "expo-document-picker";
+import * as FileSystem from "expo-file-system/legacy";
 
 const C = {
   navy: "#173B6C",
@@ -231,6 +232,10 @@ export default function RecordsScreen() {
         item.frequency,
         item.symptoms,
         item.notes,
+        item.eventDate,
+        item.hospital,
+        item.anesthesiaType,
+        item.anesthesiaNotes,
       ]
         .filter(Boolean)
         .some((value) =>
@@ -300,16 +305,42 @@ export default function RecordsScreen() {
   };
 
   const pickMedicalAttachment = async () => {
-    const result = await DocumentPicker.getDocumentAsync({
-      type: ["application/pdf", "image/*"],
-      copyToCacheDirectory: true,
-      multiple: true,
-    });
-    if (!result.canceled) {
-      setAttachmentUris((current) => [
-        ...current,
-        ...result.assets.map((asset) => asset.uri),
-      ]);
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ["application/pdf", "image/*"],
+        copyToCacheDirectory: true,
+        multiple: true,
+      });
+      if (result.canceled) return;
+      const directory = FileSystem.documentDirectory
+        ? `${FileSystem.documentDirectory}medical-attachments/`
+        : FileSystem.cacheDirectory;
+      if (!directory) {
+        Alert.alert("تعذر حفظ المرفق", "مساحة حفظ الملفات غير متاحة على هذا الجهاز.");
+        return;
+      }
+      if (FileSystem.documentDirectory) {
+        const info = await FileSystem.getInfoAsync(directory);
+        if (!info.exists) {
+          await FileSystem.makeDirectoryAsync(directory, { intermediates: true });
+        }
+      }
+      const savedUris = await Promise.all(
+        result.assets.map(async (asset, index) => {
+          const safeName = (asset.name || "medical-file")
+            .replace(/[^\w.\-\u0600-\u06FF]/g, "_")
+            .slice(-80);
+          const destination = `${directory}${Date.now()}-${index}-${safeName}`;
+          await FileSystem.copyAsync({ from: asset.uri, to: destination });
+          return destination;
+        }),
+      );
+      setAttachmentUris((current) => [...current, ...savedUris]);
+    } catch (error) {
+      Alert.alert(
+        "تعذر إضافة المرفق",
+        error instanceof Error ? error.message : "حدث خطأ أثناء حفظ الملف.",
+      );
     }
   };
 
