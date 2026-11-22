@@ -9,6 +9,7 @@ import React, {
   useState,
 } from "react";
 import { normalizePatientHealthData, type PatientHealthData } from "./health-types";
+import { syncPatientHealthNotifications } from "./notification-service";
 import {
   AUTO_BACKUP_INTERVAL_MS,
   AUTO_BACKUP_STORAGE_KEY,
@@ -245,6 +246,7 @@ export function AllergyProvider({ children }: { children: React.ReactNode }) {
     null,
   );
   const persistenceQueue = useRef<Promise<void>>(Promise.resolve());
+  const notificationSyncQueue = useRef<Promise<void>>(Promise.resolve());
 
   useEffect(() => {
     let mounted = true;
@@ -402,6 +404,26 @@ export function AllergyProvider({ children }: { children: React.ReactNode }) {
     }, AUTO_BACKUP_INTERVAL_MS);
     return () => clearInterval(interval);
   }, [hydrated, storageError, patients, activePatientId]);
+
+  useEffect(() => {
+    if (!hydrated || storageError) return;
+    let cancelled = false;
+    notificationSyncQueue.current = notificationSyncQueue.current
+      .catch(() => undefined)
+      .then(async () => {
+        let remaining = 180;
+        for (const patient of patients) {
+          if (cancelled || remaining <= 0) break;
+          remaining -= await syncPatientHealthNotifications(patient, remaining);
+        }
+      })
+      .catch(() => {
+        // Notification failures must never interrupt medical data persistence.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [hydrated, storageError, patients]);
 
   const activePatient = useMemo(
     () => patients.find((patient) => patient.id === activePatientId) ?? null,
