@@ -14,7 +14,7 @@ import {
 import { ScreenContainer } from "@/components/screen-container";
 import { useGithubUpdater } from "@/hooks/use-github-updater";
 import { useAllergy } from "@/lib/allergy-store";
-import { pickLocalBackup, shareLocalBackup } from "@/lib/device-backup";
+import {\n  pickLocalBackup,\n  restoreLocalBackupAttachments,\n  shareLocalBackup,\n} from "@/lib/device-backup";
 import {
   getBiometricLockEnabled,
   setBiometricLockEnabled,
@@ -50,11 +50,11 @@ function formatDate(value: string) {
 
 export default function SettingsScreen() {
   const { checkNow } = useGithubUpdater({ autoCheck: false });
-  const { snapshot, restoreSnapshot, autoBackupSavedAt } = useAllergy();
+  const { snapshot, restoreSnapshot, autoBackupSavedAt, storageError } = useAllergy();
   const [sharing, setSharing] = useState(false);
   const [restoring, setRestoring] = useState(false);
   const [checking, setChecking] = useState(false);
-  const [backupSheetVisible, setBackupSheetVisible] = useState(false);
+  const [backupSheetVisible, setBackupSheetVisible] = useState(false);\n  const [backupPassword, setBackupPassword] = useState("");
   const [biometricEnabled, setBiometricEnabled] = useState(false);
   const [governmentNumber, setGovernmentNumber] = useState(
     DEFAULT_GOVERNMENT_EMERGENCY_NUMBER,
@@ -96,7 +96,7 @@ export default function SettingsScreen() {
     Alert.alert(
       next ? "تم تفعيل القفل" : "تم إيقاف القفل",
       next
-        ? "سيطلب التطبيق البصمة أو التعرف على الوجه بعد خروجه للخلفية لمدة دقيقة."
+        ? "سيطلب التطبيق المصادقة عند فتحه وبعد بقائه في الخلفية لمدة دقيقة."
         : "لن يطلب التطبيق مصادقة حيوية عند العودة إليه.",
     );
   };
@@ -105,7 +105,7 @@ export default function SettingsScreen() {
     if (sharing) return;
     setSharing(true);
     try {
-      const result = await shareLocalBackup(snapshot);
+      const result = await shareLocalBackup(snapshot, backupPassword);
       Alert.alert(
         "تم تجهيز النسخة",
         `اختر Google Drive أو WhatsApp أو أي تطبيق آخر من نافذة المشاركة.\n\nاسم الملف: ${result.filename}`,
@@ -188,6 +188,13 @@ export default function SettingsScreen() {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
+        {storageError ? (
+          <View style={styles.note}>
+            <Text style={styles.noteText}>
+              تعذر فتح البيانات المشفرة: {storageError} لم يتم حذف النسخة القديمة أو استبدالها. لا تحذف بيانات التطبيق؛ تواصل مع الدعم قبل أي إعادة تثبيت.
+            </Text>
+          </View>
+        ) : null}
         <Text style={styles.kicker}>التحكم بالتطبيق</Text>
         <Text style={styles.title}>الإعدادات</Text>
 
@@ -311,9 +318,19 @@ export default function SettingsScreen() {
                 <Text style={styles.sheetTitle}>النسخ والحماية</Text>
               </View>
               <Text style={styles.sheetHint}>
-                الحفظ التلقائي محلي على الجهاز، أما النسخة اليدوية فتُرسل عبر
-                نافذة المشاركة.
+                النسخة اليدوية مشفرة بكلمة مرور، وتشمل ملفات المرضى والمرفقات الطبية. استخدم كلمة المرور نفسها عند الاستعادة واحتفظ بها في مكان آمن.
               </Text>
+              <TextInput
+                value={backupPassword}
+                onChangeText={setBackupPassword}
+                placeholder="كلمة مرور النسخة (8 أحرف على الأقل)"
+                placeholderTextColor="#8795A8"
+                secureTextEntry
+                autoCapitalize="none"
+                autoCorrect={false}
+                textAlign="right"
+                style={styles.passwordInput}
+              />
               <Pressable
                 onPress={shareBackup}
                 disabled={sharing}
@@ -330,7 +347,7 @@ export default function SettingsScreen() {
                   </View>
                 ) : (
                   <Text style={styles.jsonButtonText}>
-                    إنشاء نسخة JSON ومشاركتها
+                    إنشاء نسخة مشفرة ومشاركة المرفقات
                   </Text>
                 )}
               </Pressable>
@@ -346,14 +363,14 @@ export default function SettingsScreen() {
                 {restoring ? (
                   <ActivityIndicator color="#FFFFFF" />
                 ) : (
-                  <Text style={styles.jsonButtonText}>استعادة نسخة JSON</Text>
+                  <Text style={styles.jsonButtonText}>استعادة نسخة مشفرة أو قديمة</Text>
                 )}
               </Pressable>
               <View style={styles.statusBadge}>
                 <Text style={styles.autoBackupStatus}>
                   {autoBackupSavedAt
-                    ? `تم الحفظ التلقائي محليًا: ${formatDate(autoBackupSavedAt)}`
-                    : "سيتم حفظ نسخة تلقائية محليًا كل 15 دقيقة أثناء استخدام التطبيق."}
+                    ? `تم الحفظ التلقائي المشفر محليًا: ${formatDate(autoBackupSavedAt)}`
+                    : "سيتم حفظ نسخة تلقائية مشفرة محليًا كل 15 دقيقة أثناء استخدام التطبيق."}
                 </Text>
               </View>
             </View>
@@ -452,7 +469,7 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     textAlign: "center",
   },
-  jsonCreateButton: {
+  passwordInput: {\n    minHeight: 54,\n    borderRadius: 13,\n    borderWidth: 1,\n    borderColor: palette.line,\n    backgroundColor: "#FFFFFF",\n    paddingHorizontal: 14,\n    color: palette.navy,\n    fontSize: 16,\n    marginBottom: 12,\n  },\n  jsonCreateButton: {
     backgroundColor: "#DDF7F4",
     borderColor: palette.teal,
     borderRadius: 14,
