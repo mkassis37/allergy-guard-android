@@ -250,7 +250,7 @@ export function AllergyProvider({ children }: { children: React.ReactNode }) {
           activePatientId?: unknown;
         }>(STORAGE_KEY_V3);
         if (encrypted) {
-          const restored = normalizePatients(encrypted.patients);
+          if (!Array.isArray(encrypted.patients)) {\n            throw new Error("البيانات المشفرة لا تحتوي على قائمة مرضى صالحة.");\n          }\n          const restored = normalizePatients(encrypted.patients);
           if (!mounted) return;
           setPatients(restored);
           const requested =
@@ -273,7 +273,7 @@ export function AllergyProvider({ children }: { children: React.ReactNode }) {
             patients?: unknown;
             activePatientId?: unknown;
           };
-          const restored = normalizePatients(parsed.patients);
+          if (!Array.isArray(parsed.patients)) {\n            throw new Error("النسخة القديمة لا تحتوي على قائمة مرضى صالحة؛ لم يتم حذفها.");\n          }\n          const restored = normalizePatients(parsed.patients);
           const requested =
             typeof parsed.activePatientId === "string"
               ? parsed.activePatientId
