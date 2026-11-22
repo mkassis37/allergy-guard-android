@@ -93,6 +93,7 @@ type StoreValue = {
     record: Omit<AllergyRecord, "id" | "date" | "updatedAt">,
   ) => void;
   deleteRecord: (id: string) => void;
+  updateActiveHealthData: (update: Partial<PatientHealthData>) => void;
   saveProfile: (profile: Profile) => void;
   replaceData: (records: AllergyRecord[], profile: Profile) => void;
   restoreSnapshot: (snapshot: unknown) => void;
@@ -509,6 +510,13 @@ export function AllergyProvider({ children }: { children: React.ReactNode }) {
           updatedAt: new Date().toISOString(),
           records: patient.records.filter((record) => record.id !== id),
         })),
+      updateActiveHealthData: (update) => {
+        updateActivePatient((patient) => ({
+          ...patient,
+          ...update,
+          updatedAt: new Date().toISOString(),
+        }));
+      },
       saveProfile: (profile) => {
         const normalized = normalizeProfile(profile);
         updateActivePatient((patient) => ({
