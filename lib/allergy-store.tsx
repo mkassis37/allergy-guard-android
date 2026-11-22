@@ -5,6 +5,7 @@ import React, {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import {
@@ -239,6 +240,7 @@ export function AllergyProvider({ children }: { children: React.ReactNode }) {
   const [autoBackupSavedAt, setAutoBackupSavedAt] = useState<string | null>(
     null,
   );
+  const persistenceQueue = useRef<Promise<void>>(Promise.resolve());
 
   useEffect(() => {
     let mounted = true;
