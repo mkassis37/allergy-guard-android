@@ -72,7 +72,7 @@ async function collectAttachments(snapshot: AllergySnapshot) {
   const attachments: DeviceBackupAttachment[] = [];
   let totalBytes = 0;
   for (const uri of uris) {
-    const info = await FileSystem.getInfoAsync(uri, { size: true });
+    const info = await FileSystem.getInfoAsync(uri);
     if (!info.exists || !("size" in info) || typeof info.size !== "number") {
       throw new Error(
         `تعذر العثور على المرفق «${fileNameFromUri(uri)}». افتح السجل وأعد إرفاق الملف قبل النسخ الاحتياطي.`,
