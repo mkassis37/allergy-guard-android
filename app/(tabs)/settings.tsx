@@ -1,4 +1,5 @@
-import Constants from "expo-constants";\nimport * as LocalAuthentication from "expo-local-authentication";
+import Constants from "expo-constants";
+import * as LocalAuthentication from "expo-local-authentication";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -58,7 +59,8 @@ export default function SettingsScreen() {
   const [sharing, setSharing] = useState(false);
   const [restoring, setRestoring] = useState(false);
   const [checking, setChecking] = useState(false);
-  const [backupSheetVisible, setBackupSheetVisible] = useState(false);\n  const [backupPassword, setBackupPassword] = useState("");
+  const [backupSheetVisible, setBackupSheetVisible] = useState(false);
+  const [backupPassword, setBackupPassword] = useState("");
   const [biometricEnabled, setBiometricEnabled] = useState(false);
   const [governmentNumber, setGovernmentNumber] = useState(
     DEFAULT_GOVERNMENT_EMERGENCY_NUMBER,
@@ -496,7 +498,18 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     textAlign: "center",
   },
-  passwordInput: {\n    minHeight: 54,\n    borderRadius: 13,\n    borderWidth: 1,\n    borderColor: palette.line,\n    backgroundColor: "#FFFFFF",\n    paddingHorizontal: 14,\n    color: palette.navy,\n    fontSize: 16,\n    marginBottom: 12,\n  },\n  jsonCreateButton: {
+  passwordInput: {
+    minHeight: 54,
+    borderRadius: 13,
+    borderWidth: 1,
+    borderColor: palette.line,
+    backgroundColor: "#FFFFFF",
+    paddingHorizontal: 14,
+    color: palette.navy,
+    fontSize: 16,
+    marginBottom: 12,
+  },
+  jsonCreateButton: {
     backgroundColor: "#DDF7F4",
     borderColor: palette.teal,
     borderRadius: 14,
