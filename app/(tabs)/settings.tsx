@@ -1,4 +1,4 @@
-import Constants from "expo-constants";
+import Constants from "expo-constants";\nimport * as LocalAuthentication from "expo-local-authentication";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -14,7 +14,11 @@ import {
 import { ScreenContainer } from "@/components/screen-container";
 import { useGithubUpdater } from "@/hooks/use-github-updater";
 import { useAllergy } from "@/lib/allergy-store";
-import {\n  pickLocalBackup,\n  restoreLocalBackupAttachments,\n  shareLocalBackup,\n} from "@/lib/device-backup";
+import {
+  pickLocalBackup,
+  restoreLocalBackupAttachments,
+  shareLocalBackup,
+} from "@/lib/device-backup";
 import {
   getBiometricLockEnabled,
   setBiometricLockEnabled,
@@ -91,6 +95,22 @@ export default function SettingsScreen() {
 
   const toggleBiometricLock = async () => {
     const next = !biometricEnabled;
+    if (next) {
+      const hasHardware = await LocalAuthentication.hasHardwareAsync();
+      const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+      if (!hasHardware || !isEnrolled) {
+        Alert.alert(
+          "البصمة غير جاهزة",
+          "سجّل بصمة أو تعرّفًا على الوجه في إعدادات الجهاز أولًا.",
+        );
+        return;
+      }
+      const confirmation = await LocalAuthentication.authenticateAsync({
+        promptMessage: "تأكيد تفعيل القفل الحيوي",
+        cancelLabel: "إلغاء",
+      });
+      if (!confirmation.success) return;
+    }
     await setBiometricLockEnabled(next);
     setBiometricEnabled(next);
     Alert.alert(
@@ -103,12 +123,16 @@ export default function SettingsScreen() {
 
   const shareBackup = async () => {
     if (sharing) return;
+    if (backupPassword.trim().length < 8) {
+      Alert.alert("كلمة المرور قصيرة", "استخدم 8 أحرف على الأقل للنسخة المشفرة.");
+      return;
+    }
     setSharing(true);
     try {
       const result = await shareLocalBackup(snapshot, backupPassword);
       Alert.alert(
-        "تم تجهيز النسخة",
-        `اختر Google Drive أو WhatsApp أو أي تطبيق آخر من نافذة المشاركة.\n\nاسم الملف: ${result.filename}`,
+        "تم تجهيز النسخة المشفرة",
+        `تشمل ${snapshot.patients.length} ملف(ات) و${result.attachmentCount} مرفق(ات). احتفظ بكلمة المرور؛ لن يمكن استعادة النسخة دونها.\\n\\nاسم الملف: ${result.filename}`,
       );
     } catch (error) {
       Alert.alert(
@@ -124,24 +148,27 @@ export default function SettingsScreen() {
     if (restoring) return;
     setRestoring(true);
     try {
-      const result = await pickLocalBackup();
+      const result = await pickLocalBackup(backupPassword);
       if (!result) return;
-      const patientCount = result.data.patients.length;
+      const backup = result.backup;
+      const patientCount = backup.data.patients.length;
       Alert.alert(
         "استرجاع النسخة؟",
-        `تاريخ النسخة: ${formatDate(result.exportedAt)}\nعدد المرضى: ${patientCount}\n\nسيتم استبدال البيانات الحالية على هذا الجهاز.`,
+        `تاريخ النسخة: ${formatDate(backup.exportedAt)}\\nعدد المرضى: ${patientCount}\\nعدد المرفقات: ${backup.attachments.length}\\n${result.encrypted ? "النسخة مشفرة." : "تنبيه: هذه نسخة قديمة غير مشفرة."}\\n\\nسيتم استبدال البيانات الحالية على هذا الجهاز.`,
         [
           { text: "إلغاء", style: "cancel" },
           {
             text: "استرجاع الآن",
             style: "destructive",
-            onPress: () => {
+            onPress: async () => {
               setRestoring(true);
               try {
-                restoreSnapshot(result.data);
+                const restored = await restoreLocalBackupAttachments(backup);
+                restoreSnapshot(restored);
+                setBackupPassword("");
                 Alert.alert(
                   "تم الاسترجاع",
-                  "تمت استعادة المرضى والسجلات بنجاح.",
+                  `تمت استعادة ${patientCount} ملف(ات) و${backup.attachments.length} مرفق(ات).`,
                 );
               } catch (error) {
                 Alert.alert(
