@@ -171,7 +171,7 @@ export function normalizePatientHealthData(
   const medicationSchedules = normalizeList(source.medicationSchedules, (item): MedicationSchedule => ({
     id: stableId(item.id, "schedule"),
     medicationId: stringOr(item.medicationId),
-    times: Array.isArray(item.times) ? item.times.filter((v): v is string => typeof v === "string" && /^([01]\\d|2[0-3]):[0-5]\\d$/.test(v)).slice(0, 12) : [],
+    times: Array.isArray(item.times) ? item.times.filter((v): v is string => typeof v === "string" && /^([01]\d|2[0-3]):[0-5]\d$/.test(v)).slice(0, 12) : [],
     weekdays: Array.isArray(item.weekdays) ? item.weekdays.filter((v): v is number => Number.isInteger(v) && v >= 0 && v <= 6) : undefined,
     startDate: stringOr(item.startDate, now.slice(0, 10)),
     endDate: stringOr(item.endDate),
@@ -180,7 +180,7 @@ export function normalizePatientHealthData(
     reminderEnabled: item.reminderEnabled === true,
     createdAt: stringOr(item.createdAt, now),
     updatedAt: stringOr(item.updatedAt, now),
-  }));
+  })).filter((schedule) => medicationIds.has(schedule.medicationId));
   const conditions = normalizeList(source.conditions, (item): ChronicCondition => ({
     id: stableId(item.id, "condition"),
     name: stringOr(item.name, "حالة بدون اسم"),
