@@ -65,9 +65,11 @@ function mimeTypeFromName(name: string) {
 async function collectAttachments(snapshot: AllergySnapshot) {
   const uris = [
     ...new Set(
-      snapshot.patients.flatMap((patient) =>
-        patient.records.flatMap((record) => record.attachmentUris ?? []),
-      ),
+      snapshot.patients.flatMap((patient) => [
+        ...patient.records.flatMap((record) => record.attachmentUris ?? []),
+        ...patient.appointments.flatMap((appointment) => appointment.attachmentUris ?? []),
+        ...patient.labResults.flatMap((result) => result.attachmentUris ?? []),
+      ]),
     ),
   ];
   const attachments: DeviceBackupAttachment[] = [];
@@ -239,6 +241,23 @@ export async function restoreLocalBackupAttachments(
     restoredUris.set(attachment.uri, destination);
   }
 
+  const remapAttachmentUris = async (sourceUris: string[] = []) => {
+    const uris: string[] = [];
+    for (const uri of sourceUris) {
+      const mapped = restoredUris.get(uri);
+      if (mapped) {
+        uris.push(mapped);
+        continue;
+      }
+      try {
+        if ((await FileSystem.getInfoAsync(uri)).exists) uris.push(uri);
+      } catch {
+        // Missing optional attachments are omitted from the restored record.
+      }
+    }
+    return uris;
+  };
+
   const patients = await Promise.all(
     backup.data.patients.map(async (patient) => ({
       ...patient,
@@ -268,6 +287,14 @@ export async function restoreLocalBackupAttachments(
           return { ...record, attachmentUris: uris, notes };
         }),
       ),
+      appointments: await Promise.all((patient.appointments ?? []).map(async (appointment) => ({
+        ...appointment,
+        attachmentUris: await remapAttachmentUris(appointment.attachmentUris ?? []),
+      }))),
+      labResults: await Promise.all((patient.labResults ?? []).map(async (result) => ({
+        ...result,
+        attachmentUris: await remapAttachmentUris(result.attachmentUris ?? []),
+      }))),
     })),
   );
 
