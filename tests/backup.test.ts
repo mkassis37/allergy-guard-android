@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
   decryptBackupPayload,
   encryptBackupPayload,
-  isEncryptedBackup,\n  encryptJsonPayload,\n  decryptJsonPayload,
+  isEncryptedBackup,
+  encryptJsonPayload,
+  decryptJsonPayload,
 } from "../lib/backup-crypto";
 import { csvRows, makeBackupPayload } from "../lib/backup-serialization";
 import { validateBackup } from "../lib/backup-format";
