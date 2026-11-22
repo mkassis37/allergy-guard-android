@@ -33,7 +33,7 @@ export async function authenticateBiometric() {
 }
 
 export function useBiometricLock(timeoutMs = DEFAULT_TIMEOUT_MS) {
-  const [locked, setLocked] = useState(false);
+  const [locked, setLocked] = useState(Platform.OS !== "web");
   const [enabled, setEnabled] = useState(false);
 
   useEffect(() => {
