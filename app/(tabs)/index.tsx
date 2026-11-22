@@ -260,6 +260,10 @@ export default function HomeScreen() {
             </Text>
           </View>
         </View>
+
+        <Text style={styles.attribution}>
+          فكرة وإعداد ميناس، بمساعدة ChatGPT.
+        </Text>
       </ScrollView>
     </ScreenContainer>
   );
@@ -505,6 +509,13 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     textAlign: "right",
     marginTop: 3,
+  },
+  attribution: {
+    color: C.muted,
+    fontSize: 11,
+    textAlign: "center",
+    marginTop: 14,
+    marginBottom: 6,
   },
   pressed: { opacity: 0.78, transform: [{ scale: 0.99 }] },
 });
