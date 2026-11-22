@@ -51,7 +51,21 @@ export function useGithubUpdater(options: { autoCheck?: boolean } = {}) {
         const update = await findGithubUpdate(getCurrentVersion());
         if (update) await offerUpdate(update);
         if (manual && !update && mounted.current) {
-          Alert.alert("لا يوجد تحديث", "أنت تستخدم أحدث إصدار متاح حاليًا.");
+          Alert.alert(
+            "لا يوجد تحديث أحدث",
+            "لا توجد نسخة أحدث منشورة حاليًا. يمكنك فتح صفحة الإصدارات لتنزيل آخر APK متاح.",
+            [
+              { text: "إغلاق", style: "cancel" },
+              {
+                text: "فتح صفحة التنزيل",
+                onPress: () => {
+                  void Linking.openURL(
+                    "https://github.com/mkassis37/allergy-guard-android/releases/latest",
+                  );
+                },
+              },
+            ],
+          );
         }
       } catch {
         if (manual && mounted.current) {
