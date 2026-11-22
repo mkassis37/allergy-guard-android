@@ -410,6 +410,7 @@ export function AllergyProvider({ children }: { children: React.ReactNode }) {
       snapshot: { schemaVersion: 2, patients, activePatientId },
       autoBackupSavedAt,
       hydrated,
+      storageError,
       addPatient: (input) => {
         const now = new Date().toISOString();
         const id = makeId("patient");
