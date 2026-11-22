@@ -23,8 +23,11 @@ function validateSnapshot(value: unknown): AllergySnapshot {
   if (!Array.isArray(source.patients)) {
     throw new Error("النسخة الاحتياطية لا تحتوي على قائمة مرضى صالحة.");
   }
+  if (source.schemaVersion !== 2 && source.schemaVersion !== 3) {
+    throw new Error("إصدار بيانات النسخة غير مدعوم.");
+  }
   return {
-    schemaVersion: 2,
+    schemaVersion: 3,
     patients: source.patients,
     activePatientId:
       typeof source.activePatientId === "string"
