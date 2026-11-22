@@ -61,3 +61,14 @@ export async function writeEncryptedJson(storageKey: string, value: unknown) {
   const encrypted = encryptJsonWithKey(value, key, nonce);
   await AsyncStorage.setItem(storageKey, encrypted);
 }
+
+export async function encryptForDevice(value: unknown) {
+  const key = await getDeviceKey(true);
+  const nonce = await Crypto.getRandomBytesAsync(NONCE_BYTES);
+  return encryptJsonWithKey(value, key, nonce);
+}
+
+export async function decryptForDevice<T>(raw: string): Promise<T> {
+  const key = await getDeviceKey(false);
+  return decryptJsonWithKey<T>(raw, key);
+}
