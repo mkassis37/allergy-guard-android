@@ -44,6 +44,9 @@ jobs:
         run: |
           node -e "require.resolve('expo-print/package.json'); require.resolve('expo-crypto/package.json'); require.resolve('expo-mail-composer/package.json'); require.resolve('expo-sharing/package.json'); require.resolve('expo-notifications/package.json'); require.resolve('expo-secure-store/package.json'); require.resolve('expo-local-authentication/package.json'); console.log('required packages are installed')"
 
+      - name: Audit production dependencies
+        run: pnpm audit --prod --audit-level high
+
       - name: Verify package and app versions
         run: |
           set -euo pipefail
