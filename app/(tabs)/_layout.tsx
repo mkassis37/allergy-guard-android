@@ -38,6 +38,15 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="medications"
+        options={{
+          title: "الأدوية",
+          tabBarIcon: ({ color }) => (
+            <IconSymbol size={23} name="pills.fill" color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="emergency"
         options={{
           title: "الطوارئ",
