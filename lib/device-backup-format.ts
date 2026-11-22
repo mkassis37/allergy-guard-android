@@ -37,8 +37,11 @@ export function validateDeviceBackup(value: unknown): DeviceBackupFile {
   if (!value || typeof value !== "object") {
     throw new Error("ملف النسخة الاحتياطية غير صالح.");
   }
-  const source = value as Partial<DeviceBackupFile> & {
-    schemaVersion?: number;
+  const source = value as {
+    app?: unknown;
+    schemaVersion?: unknown;
+    exportedAt?: unknown;
+    data?: unknown;
     attachments?: unknown;
   };
   if (
