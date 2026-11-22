@@ -58,7 +58,7 @@ export default function EmergencyScreen() {
     const medicineAllergies = allergies.filter((r) => r.kind === "medicine-allergy");
     const lines = [
       doctorMode
-        ? "بطاقة طوارئ طبية مختصرة للطبيب — Allergy & Health Traker"
+        ? "بطاقة طوارئ طبية مختصرة للطبيب — Allergy & Health Tracker"
         : "بطاقة الطوارئ الطبية — Allergy & Health Traker",
       `الاسم: ${profile.fullName || "غير مسجل"}`,
       `فصيلة الدم: ${profile.bloodType || "غير مسجلة"}`,
@@ -76,7 +76,7 @@ export default function EmergencyScreen() {
       );
     }
     lines.push("يرجى التحقق من هذه المعلومات مع المريض؛ هذه البطاقة سجل شخصي وليست تشخيصًا طبيًا.");
-    await Share.share({ message: lines.join("\\n") });
+    await Share.share({ message: lines.join("\n") });
   };
   const save = () => {
     saveProfile(draft);
