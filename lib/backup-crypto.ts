@@ -5,7 +5,7 @@ import { validateBackup, type BackupPayload } from "./backup-format";
 
 const ENVELOPE_APP = "allergy-guard-encrypted-backup" as const;
 const ENVELOPE_VERSION = 1 as const;
-const CURRENT_ITERATIONS = 20_000;
+const CURRENT_ITERATIONS = 210_000;
 const MIN_SUPPORTED_ITERATIONS = 10_000;
 const MAX_SUPPORTED_ITERATIONS = 500_000;
 const SALT_BYTES = 16;
