@@ -2,7 +2,8 @@ import * as DocumentPicker from "expo-document-picker";
 import * as FileSystem from "expo-file-system/legacy";
 import * as Sharing from "expo-sharing";
 import { Platform } from "react-native";
-import type { AllergySnapshot } from "./allergy-store";
+import type { AllergySnapshot, Patient } from "./allergy-store";
+import { validateBackup } from "./backup-format";
 import {
   validateDeviceBackup,
   type DeviceBackupAttachment,
@@ -143,6 +144,35 @@ export type PickedDeviceBackup = {
   encrypted: boolean;
 };
 
+function normalizeImportedBackup(value: unknown): DeviceBackupFile {
+  try {
+    return validateDeviceBackup(value);
+  } catch {
+    // Preserve compatibility with the older single-patient JSON backup format.
+    const legacy = validateBackup(value);
+    const now = legacy.exportedAt || new Date().toISOString();
+    const patientId = `legacy-${Date.now()}`;
+    const patient: Patient = {
+      ...legacy.profile,
+      id: patientId,
+      records: legacy.records,
+      createdAt: now,
+      updatedAt: now,
+    };
+    return {
+      app: "allergy-guard-local-backup",
+      schemaVersion: 2,
+      exportedAt: now,
+      data: {
+        schemaVersion: 2,
+        patients: [patient],
+        activePatientId: patientId,
+      },
+      attachments: [],
+    };
+  }
+}
+
 export async function pickLocalBackup(
   password: string,
 ): Promise<PickedDeviceBackup | null> {
@@ -163,10 +193,10 @@ export async function pickLocalBackup(
   }
   if (isEncryptedBackup(parsed)) {
     const decrypted = await decryptJsonPayload(raw, password);
-    return { backup: validateDeviceBackup(decrypted), encrypted: true };
+    return { backup: normalizeImportedBackup(decrypted), encrypted: true };
   }
   // Backward compatibility for older unencrypted .agbackup files.
-  return { backup: validateDeviceBackup(parsed), encrypted: false };
+  return { backup: normalizeImportedBackup(parsed), encrypted: false };
 }
 
 export async function restoreLocalBackupAttachments(
