@@ -12,7 +12,7 @@ import {
   decryptJsonPayload,
   encryptJsonPayload,
   isEncryptedBackup,
-} from "./backup-crypto";
+} from "./backup-crypto";\nimport { decryptForDevice, encryptForDevice } from "./secure-local-storage";
 
 const backupFilename = () =>
   `AllergyGuard-Backup-${new Date().toISOString().replace(/[:.]/g, "-")}.agbackup`;
@@ -86,16 +86,27 @@ async function collectAttachments(snapshot: AllergySnapshot) {
     if (totalBytes > MAX_TOTAL_ATTACHMENT_BYTES) {
       throw new Error("إجمالي المرفقات يتجاوز 60 ميغابايت. أنشئ نسخًا أصغر على دفعات.");
     }
-    const fileName = fileNameFromUri(uri);
-    const base64 = await FileSystem.readAsStringAsync(uri, {
-      encoding: FileSystem.EncodingType.Base64,
-    });
-    attachments.push({
-      uri,
-      fileName,
-      mimeType: mimeTypeFromName(fileName),
-      base64,
-    });
+    let fileName = fileNameFromUri(uri);
+    let mimeType = mimeTypeFromName(fileName);
+    let base64: string;
+    if (uri.endsWith(".agenc")) {
+      const encryptedFile = await FileSystem.readAsStringAsync(uri, {
+        encoding: FileSystem.EncodingType.UTF8,
+      });
+      const payload = await decryptForDevice<{
+        fileName: string;
+        mimeType: string;
+        base64: string;
+      }>(encryptedFile);
+      fileName = payload.fileName;
+      mimeType = payload.mimeType;
+      base64 = payload.base64;
+    } else {
+      base64 = await FileSystem.readAsStringAsync(uri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+    }
+    attachments.push({ uri, fileName, mimeType, base64 });
   }
   return attachments;
 }
@@ -162,9 +173,7 @@ export async function restoreLocalBackupAttachments(
 ): Promise<AllergySnapshot> {
   const directory = FileSystem.documentDirectory
     ? `${FileSystem.documentDirectory}${ATTACHMENT_DIRECTORY}`
-    : FileSystem.cacheDirectory
-      ? `${FileSystem.cacheDirectory}${ATTACHMENT_DIRECTORY}`
-      : null;
+    : null;
   if (!directory && backup.attachments.length) {
     throw new Error("تعذر تحديد مجلد حفظ المرفقات على هذا الجهاز.");
   }
@@ -180,9 +189,14 @@ export async function restoreLocalBackupAttachments(
     const safeName = attachment.fileName
       .replace(/[^\w.\-\u0600-\u06FF]/g, "_")
       .slice(-100);
-    const destination = `${directory}${Date.now()}-${index}-${safeName}`;
-    await FileSystem.writeAsStringAsync(destination, attachment.base64, {
-      encoding: FileSystem.EncodingType.Base64,
+    const encrypted = await encryptForDevice({
+      fileName: attachment.fileName,
+      mimeType: attachment.mimeType,
+      base64: attachment.base64,
+    });
+    const destination = `${directory}${Date.now()}-${index}-${safeName}.agenc`;
+    await FileSystem.writeAsStringAsync(destination, encrypted, {
+      encoding: FileSystem.EncodingType.UTF8,
     });
     restoredUris.set(attachment.uri, destination);
   }
