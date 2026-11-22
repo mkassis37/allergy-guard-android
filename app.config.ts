@@ -22,6 +22,7 @@ const config: ExpoConfig = {
   android: {
     package: "com.mkassis37.allergyguard",
     versionCode,
+    allowBackup: false,
     edgeToEdgeEnabled: true,
     adaptiveIcon: {
       backgroundColor: "#E8F4F5",
@@ -39,6 +40,10 @@ const config: ExpoConfig = {
   },
   plugins: [
     "expo-router",
+    [
+      "expo-secure-store",
+      { configureAndroidBackup: true },
+    ],
     [
       "expo-local-authentication",
       {
