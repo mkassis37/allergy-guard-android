@@ -362,9 +362,12 @@ export function AllergyProvider({ children }: { children: React.ReactNode }) {
       await AsyncStorage.multiRemove([STORAGE_KEY_V2, STORAGE_KEY_V1]);
       setAutoBackupSavedAt(autoBackup.savedAt);
     };
-    persist().catch((error) =>
-      console.warn("Failed to persist encrypted allergy store:", error),
-    );
+    persistenceQueue.current = persistenceQueue.current
+      .catch(() => undefined)
+      .then(persist)
+      .catch((error) => {
+        console.warn("Failed to persist encrypted allergy store:", error);
+      });
   }, [hydrated, storageError, patients, activePatientId]);
 
   useEffect(() => {
