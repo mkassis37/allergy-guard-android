@@ -147,6 +147,18 @@ function labelFor(kind: RecordKind) {
   return optionFor(kind).label;
 }
 
+function normalizeMedicationText(value: string) {
+  return value
+    .normalize("NFKC")
+    .toLocaleLowerCase("ar")
+    .replace(/[\\u064B-\\u065F\\u0670]/g, "")
+    .replace(/[أإآ]/g, "ا")
+    .replace(/[ى]/g, "ي")
+    .replace(/[^a-z0-9\\u0600-\\u06FF]+/g, " ")
+    .trim()
+    .replace(/\\s+/g, " ");
+}
+
 function Field({
   label,
   value,
@@ -361,15 +373,12 @@ export default function RecordsScreen() {
       kind === "medicine-tolerated";
 
     if (isMedication && !skipMedicationWarning && kind !== "medicine-allergy") {
-      const entered = `${name} ${activeIngredient}`
-        .trim()
-        .toLocaleLowerCase("ar");
+      const entered = normalizeMedicationText(`${name} ${activeIngredient}`);
       const match = records.find((record) => {
         if (record.kind !== "medicine-allergy") return false;
-        const known =
-          `${record.name} ${record.activeIngredient ?? ""}`.toLocaleLowerCase(
-            "ar",
-          );
+        const known = normalizeMedicationText(
+          `${record.name} ${record.activeIngredient ?? ""}`,
+        );
         return (
           entered.length > 2 &&
           (known.includes(entered) || entered.includes(known))
@@ -377,8 +386,8 @@ export default function RecordsScreen() {
       });
       if (match) {
         Alert.alert(
-          "تحذير حساسية دوائية",
-          `يتطابق الدواء مع «${match.name}»${match.activeIngredient ? ` (${match.activeIngredient})` : ""}. راجع الطبيب قبل استخدامه.`,
+          "تنبيه تشابه نصي — ليس فحص سلامة دوائية",
+          `قد يتشابه الاسم مع سجل الحساسية «${match.name}»${match.activeIngredient ? ` (${match.activeIngredient})` : ""}. هذه مقارنة نصية أولية فقط؛ وعدم ظهور التنبيه لا يعني أن الدواء آمن. تحقق من الطبيب أو الصيدلي قبل الاستخدام.`,
           [
             { text: "إلغاء الحفظ", style: "cancel" },
             { text: "حفظ رغم التحذير", onPress: () => save(true) },
