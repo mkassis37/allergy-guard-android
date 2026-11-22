@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { router } from "expo-router";
 import {
   Alert,
   Linking,
@@ -17,7 +18,6 @@ import {
 import { ScreenContainer } from "@/components/screen-container";
 import { FormActionBar } from "@/components/form-action-bar";
 import { useAllergy } from "@/lib/allergy-store";
-import { exportBackup, importJsonBackup } from "@/lib/backup";
 import { getGovernmentEmergencyNumber } from "@/lib/emergency-settings";
 
 const palette = {
@@ -32,7 +32,7 @@ const palette = {
 };
 
 export default function EmergencyScreen() {
-  const { records, profile, saveProfile, replaceData } = useAllergy();
+  const { records, profile, saveProfile } = useAllergy();
   const [editing, setEditing] = useState(false);
   const [doctorMode, setDoctorMode] = useState(false);
   const [previewVisible, setPreviewVisible] = useState(false);
@@ -59,7 +59,7 @@ export default function EmergencyScreen() {
     const lines = [
       doctorMode
         ? "بطاقة طوارئ طبية مختصرة للطبيب — Allergy & Health Tracker"
-        : "بطاقة الطوارئ الطبية — Allergy & Health Traker",
+        : "بطاقة الطوارئ الطبية — Allergy & Health Tracker",
       `الاسم: ${profile.fullName || "غير مسجل"}`,
       `فصيلة الدم: ${profile.bloodType || "غير مسجلة"}`,
       `رقم الهاتف: ${profile.phone || "غير مسجل"}`,
@@ -82,44 +82,6 @@ export default function EmergencyScreen() {
     saveProfile(draft);
     setEditing(false);
     Alert.alert("تم الحفظ", "تم تحديث بيانات بطاقة الطوارئ.");
-  };
-  const exportFile = async (format: "json" | "csv") => {
-    try {
-      await exportBackup(profile, records, format);
-    } catch (error) {
-      Alert.alert(
-        "تعذر التصدير",
-        error instanceof Error ? error.message : "حدث خطأ غير متوقع.",
-      );
-    }
-  };
-  const importFile = async () => {
-    try {
-      const backup = await importJsonBackup();
-      if (!backup) return;
-      Alert.alert(
-        "استبدال البيانات؟",
-        `سيتم استيراد ${backup.records.length} سجلًا واستبدال البيانات الحالية.`,
-        [
-          { text: "إلغاء", style: "cancel" },
-          {
-            text: "استيراد",
-            onPress: () => {
-              replaceData(backup.records, backup.profile);
-              Alert.alert(
-                "تم الاستيراد",
-                "تمت استعادة النسخة الاحتياطية بنجاح.",
-              );
-            },
-          },
-        ],
-      );
-    } catch (error) {
-      Alert.alert(
-        "تعذر الاستيراد",
-        error instanceof Error ? error.message : "الملف غير صالح أو تالف.",
-      );
-    }
   };
   return (
     <ScreenContainer
@@ -296,29 +258,18 @@ export default function EmergencyScreen() {
             <Text style={styles.editText}>تعديل البيانات</Text>
           </Pressable>
         </View>
-        <View style={styles.backupSection}>
-          <Text style={styles.backupTitle}>النسخ الاحتياطي</Text>
+        <Pressable
+          onPress={() => router.push("/(tabs)/settings" as any)}
+          style={({ pressed }) => [
+            styles.backupSection,
+            pressed && { opacity: 0.8 },
+          ]}
+        >
+          <Text style={styles.backupTitle}>النسخ الاحتياطي المشفر</Text>
           <Text style={styles.backupHint}>
-            أنشئ ملفًا محليًا وشاركه مباشرة إلى Drive أو WhatsApp أو أي مكان.
+            إنشاء نسخة بكلمة مرور تشمل جميع ملفات المرضى والمرفقات، أو استعادة نسخة سابقة. انتقل إلى إعدادات التطبيق لإدارة النسخ.
           </Text>
-          <View style={styles.backupActions}>
-            <Pressable
-              onPress={() => exportFile("json")}
-              style={styles.backupButton}
-            >
-              <Text style={styles.backupButtonText}>تصدير ومشاركة</Text>
-            </Pressable>
-            <Pressable
-              onPress={() => exportFile("csv")}
-              style={styles.backupButton}
-            >
-              <Text style={styles.backupButtonText}>تصدير Excel</Text>
-            </Pressable>
-            <Pressable onPress={importFile} style={styles.backupButton}>
-              <Text style={styles.backupButtonText}>استيراد من ملف</Text>
-            </Pressable>
-          </View>
-        </View>
+        </Pressable>
         <View style={styles.note}>
           <Text style={styles.noteText}>
             هذه البطاقة سجل شخصي للمعلومات وليست تشخيصًا طبيًا. في حالة صعوبة
