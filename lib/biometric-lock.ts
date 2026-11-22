@@ -1,19 +1,21 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as LocalAuthentication from "expo-local-authentication";
 import { useCallback, useEffect, useState } from "react";
-import { AppState, Platform } from "react-native";
+import { AppState, DeviceEventEmitter, Platform } from "react-native";
 
 export const BIOMETRIC_LOCK_KEY = "allergy-guard-biometric-lock-enabled";
 const DEFAULT_TIMEOUT_MS = 60_000;
+const BIOMETRIC_LOCK_CHANGED = "allergy-guard-biometric-lock-changed";
 
 export async function getBiometricLockEnabled() {
   if (Platform.OS === "web") return false;
   const value = await AsyncStorage.getItem(BIOMETRIC_LOCK_KEY);
-  return value !== "false";
+  return value === "true";
 }
 
 export async function setBiometricLockEnabled(enabled: boolean) {
   await AsyncStorage.setItem(BIOMETRIC_LOCK_KEY, String(enabled));
+  DeviceEventEmitter.emit(BIOMETRIC_LOCK_CHANGED, enabled);
 }
 
 export async function authenticateBiometric() {
@@ -36,11 +38,27 @@ export function useBiometricLock(timeoutMs = DEFAULT_TIMEOUT_MS) {
 
   useEffect(() => {
     let mounted = true;
+    const applyEnabled = async (value: boolean) => {
+      if (!mounted) return;
+      setEnabled(value);
+      if (!value) {
+        setLocked(false);
+        return;
+      }
+      // Protect cold launches as well as returns from the background.
+      setLocked(true);
+      if (await authenticateBiometric()) setLocked(false);
+    };
     getBiometricLockEnabled()
-      .then((value) => mounted && setEnabled(value))
+      .then((value) => void applyEnabled(value))
       .catch(() => mounted && setEnabled(false));
+    const subscription = DeviceEventEmitter.addListener(
+      BIOMETRIC_LOCK_CHANGED,
+      (value: boolean) => void applyEnabled(value === true),
+    );
     return () => {
       mounted = false;
+      subscription.remove();
     };
   }, []);
 
