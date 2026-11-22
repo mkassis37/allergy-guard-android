@@ -103,7 +103,7 @@ export async function syncPatientHealthNotifications(
           data: { kind: "appointment", patientId: patient.id, appointmentId: appointment.id },
           sound: "default",
         },
-        trigger: triggerDate,
+        trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: triggerDate },
       });
       scheduledCount += 1;
     }
