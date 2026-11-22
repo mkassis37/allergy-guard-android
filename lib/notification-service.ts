@@ -35,6 +35,16 @@ function buildLocalDate(date: Date, time: string): Date | null {
   return result;
 }
 
+export async function clearScheduledHealthNotifications(): Promise<void> {
+  const existing = await Notifications.getAllScheduledNotificationsAsync();
+  for (const notification of existing) {
+    const data = notification.content.data as Record<string, unknown> | undefined;
+    if (data?.kind === "medication" || data?.kind === "appointment") {
+      await Notifications.cancelScheduledNotificationAsync(notification.identifier);
+    }
+  }
+}
+
 export async function syncPatientHealthNotifications(
   patient: Patient,
   availableSlots = MAX_PENDING_HEALTH_NOTIFICATIONS,
