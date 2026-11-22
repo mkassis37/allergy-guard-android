@@ -3,6 +3,7 @@ import { Alert, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View 
 import { ScreenContainer } from "@/components/screen-container";
 import { useAllergy } from "@/lib/allergy-store";
 import type { MedicalAppointment } from "@/lib/health-types";
+import { requestHealthNotificationPermission } from "@/lib/notification-service";
 
 const C={navy:"#173B6C",teal:"#087E8B",muted:"#66758A",bg:"#F5F8FC",card:"#FFF",line:"#E1E7F0",soft:"#EAF5F6"};
 const id=()=>`appointment-${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
@@ -15,13 +16,14 @@ export default function AppointmentsScreen(){
  const [dateTime,setDateTime]=useState("");
  const [notes,setNotes]=useState("");
  const appointments=activePatient?.appointments??[];
- const add=()=>{
+ const add=async()=>{
   if(!title.trim()||!dateTime.trim()){Alert.alert("بيانات ناقصة","أدخل اسم الموعد وتاريخه ووقته.");return;}
   const normalized=dateTime.trim().replace(" ","T");
   const date=new Date(normalized);
   if(Number.isNaN(date.getTime())){Alert.alert("التاريخ غير صحيح","استخدم الصيغة: 2026-12-05 10:30");return;}
+  const permissionGranted=await requestHealthNotificationPermission();
   const now=new Date().toISOString();
-  const item:MedicalAppointment={id:id(),type:"doctor",title:title.trim(),clinicianOrFacility:facility.trim(),startsAt:date.toISOString(),reminderMinutes:[],status:"scheduled",notes:notes.trim(),attachmentUris:[],createdAt:now,updatedAt:now};
+  const item:MedicalAppointment={id:id(),type:"doctor",title:title.trim(),clinicianOrFacility:facility.trim(),startsAt:date.toISOString(),reminderMinutes:permissionGranted?[60]:[],status:"scheduled",notes:notes.trim(),attachmentUris:[],createdAt:now,updatedAt:now};
   updateActiveHealthData({appointments:[item,...appointments]});
   setTitle("");setFacility("");setDateTime("");setNotes("");setVisible(false);
  };
@@ -40,7 +42,7 @@ export default function AppointmentsScreen(){
     {!!item.notes&&<Text style={styles.cardSub}>{item.notes}</Text>}
     {item.status==="scheduled"&&<View style={styles.actions}><Pressable onPress={()=>updateStatus(item,"completed")} style={styles.complete}><Text style={styles.completeText}>تحديد كمكتمل</Text></Pressable><Pressable onPress={()=>updateStatus(item,"cancelled")} style={styles.cancel}><Text style={styles.cancelText}>إلغاء الموعد</Text></Pressable></View>}
    </View>)}
-   <View style={styles.notice}><Text style={styles.noticeText}>حفظ الموعد لا يعني أن التنبيه قد جُدول بعد. سيتم ربط المواعيد بالإشعارات المحلية بعد إكمال واختبار خدمة التنبيهات.</Text></View>
+   <View style={styles.notice}><Text style={styles.noticeText}>إذا سمحت بإشعارات التطبيق، يُجدول تذكير قبل الموعد بساعة. قد يؤثر نظام Android وإعدادات توفير البطارية في توقيت وصول الإشعار.</Text></View>
   </ScrollView>
   <Modal visible={visible} transparent animationType="slide" onRequestClose={()=>setVisible(false)}><View style={styles.modalRoot}><Pressable style={styles.backdrop} onPress={()=>setVisible(false)}/><View style={styles.sheet}>
    <Text style={styles.modalTitle}>موعد جديد</Text>
