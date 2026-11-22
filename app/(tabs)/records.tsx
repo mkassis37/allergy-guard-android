@@ -195,6 +195,7 @@ function Field({
 }
 
 export default function RecordsScreen() {
+  const routeParams = useLocalSearchParams<{ filter?: string }>();
   const insets = useSafeAreaInsets();
   const systemBottomClearance =
     Platform.OS === "android"
