@@ -34,9 +34,12 @@ function buildLocalDate(date: Date, time: string): Date | null {
   return result;
 }
 
-export async function syncPatientHealthNotifications(patient: Patient): Promise<void> {
+export async function syncPatientHealthNotifications(
+  patient: Patient,
+  availableSlots = MAX_PENDING_HEALTH_NOTIFICATIONS,
+): Promise<number> {
   const permission = await Notifications.getPermissionsAsync();
-  if (!permission.granted) return;
+  if (!permission.granted) return 0;
 
   const existing = await Notifications.getAllScheduledNotificationsAsync();
   for (const notification of existing) {
@@ -50,6 +53,7 @@ export async function syncPatientHealthNotifications(patient: Patient): Promise<
   }
 
   let scheduledCount = 0;
+  const limit = Math.max(0, Math.min(availableSlots, MAX_PENDING_HEALTH_NOTIFICATIONS));
   const now = new Date();
 
   for (const schedule of patient.medicationSchedules) {
@@ -60,14 +64,14 @@ export async function syncPatientHealthNotifications(patient: Patient): Promise<
     const start = schedule.startDate || localDateKey(now);
     const end = schedule.endDate || medication.endDate || "";
     for (let offset = 0; offset < MEDICATION_HORIZON_DAYS; offset += 1) {
-      if (scheduledCount >= MAX_PENDING_HEALTH_NOTIFICATIONS) break;
+      if (scheduledCount >= limit) break;
       const day = new Date(now.getFullYear(), now.getMonth(), now.getDate() + offset);
       const dayKey = localDateKey(day);
       if (dayKey < start || (end && dayKey > end)) continue;
       if (schedule.weekdays?.length && !schedule.weekdays.includes(day.getDay())) continue;
 
       for (const time of schedule.times) {
-        if (scheduledCount >= MAX_PENDING_HEALTH_NOTIFICATIONS) break;
+        if (scheduledCount >= limit) break;
         const triggerDate = buildLocalDate(day, time);
         if (!triggerDate || triggerDate <= now) continue;
         await Notifications.scheduleNotificationAsync({
@@ -85,10 +89,10 @@ export async function syncPatientHealthNotifications(patient: Patient): Promise<
   }
 
   for (const appointment of patient.appointments) {
-    if (scheduledCount >= MAX_PENDING_HEALTH_NOTIFICATIONS) break;
+    if (scheduledCount >= limit) break;
     if (appointment.status !== "scheduled") continue;
     for (const minutes of appointment.reminderMinutes) {
-      if (scheduledCount >= MAX_PENDING_HEALTH_NOTIFICATIONS) break;
+      if (scheduledCount >= limit) break;
       const triggerDate = new Date(new Date(appointment.startsAt).getTime() - minutes * 60_000);
       if (Number.isNaN(triggerDate.getTime()) || triggerDate <= now) continue;
       await Notifications.scheduleNotificationAsync({
@@ -103,4 +107,5 @@ export async function syncPatientHealthNotifications(patient: Patient): Promise<
       scheduledCount += 1;
     }
   }
+  return scheduledCount;
 }
