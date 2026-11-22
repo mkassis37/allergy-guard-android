@@ -368,7 +368,7 @@ export function AllergyProvider({ children }: { children: React.ReactNode }) {
   }, [hydrated, storageError, patients, activePatientId]);
 
   useEffect(() => {
-    if (!hydrated) return;
+    if (!hydrated || storageError) return;
     const interval = setInterval(async () => {
       const snapshot: AllergySnapshot = {
         schemaVersion: 2,
@@ -384,7 +384,7 @@ export function AllergyProvider({ children }: { children: React.ReactNode }) {
       }
     }, AUTO_BACKUP_INTERVAL_MS);
     return () => clearInterval(interval);
-  }, [hydrated, patients, activePatientId]);
+  }, [hydrated, storageError, patients, activePatientId]);
 
   const activePatient = useMemo(
     () => patients.find((patient) => patient.id === activePatientId) ?? null,
