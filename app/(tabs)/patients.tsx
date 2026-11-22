@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   Alert,
@@ -459,6 +460,18 @@ export default function PatientsScreen() {
                     </View>
                   ))
                 )}
+                <Pressable
+                  onPress={() => {
+                    selectPatient(detailPatient.id);
+                    setDetailPatient(null);
+                    router.push("/(tabs)/records" as any);
+                  }}
+                  style={styles.detailManage}
+                >
+                  <Text style={styles.detailManageText}>
+                    عرض جميع السجلات ({detailPatient.records.length})
+                  </Text>
+                </Pressable>
                 <Pressable
                   onPress={() => {
                     setDetailPatient(null);
