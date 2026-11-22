@@ -409,8 +409,8 @@ export default function SettingsScreen() {
         <View style={styles.card}>
           <Text style={styles.cardTitle}>تحديثات التطبيق</Text>
           <Text style={styles.cardText}>
-            يتحقق التطبيق من أحدث إصدار مستقر على GitHub، ويمكنك إجراء فحص يدوي
-            في أي وقت.
+            يعرض رقم النسخة المثبتة ويفحص أحدث إصدار مستقر على GitHub. عند توفر تحديث
+            يظهر خيار تنزيل ملف APK الرسمي.
           </Text>
           <View style={styles.versionRow}>
             <Text style={styles.labelInline}>رقم الإصدار المثبت</Text>
