@@ -31,7 +31,7 @@ function fromBase64(value: string) {
   return Uint8Array.from(binary, (char) => char.charCodeAt(0));
 }
 
-export function encryptJsonWithKey(value: unknown, key: Uint8Array) {
+export function encryptJsonWithKey(\n  value: unknown,\n  key: Uint8Array,\n  nonce = Crypto.getRandomBytes(NONCE_BYTES),\n) {
   if (key.length !== KEY_BYTES) throw new Error("Invalid local encryption key.");
   const nonce = Crypto.getRandomBytes(NONCE_BYTES);
   const plaintext = new TextEncoder().encode(JSON.stringify(value));
