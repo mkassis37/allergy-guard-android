@@ -12,6 +12,7 @@ import {
 import { ScreenContainer } from "@/components/screen-container";
 import { useAllergy } from "@/lib/allergy-store";
 import type { Medication, MedicationSchedule } from "@/lib/health-types";
+import { requestHealthNotificationPermission } from "@/lib/notification-service";
 
 const C = {
   navy: "#173B6C",
@@ -121,6 +122,24 @@ export default function MedicationsScreen() {
     });
   };
 
+  const toggleReminder = async (schedule: MedicationSchedule) => {
+    const next = !schedule.reminderEnabled;
+    if (next) {
+      const granted = await requestHealthNotificationPermission();
+      if (!granted) {
+        Alert.alert("الإشعارات غير مفعّلة", "يمكنك السماح بإشعارات التطبيق من إعدادات الهاتف.");
+        return;
+      }
+    }
+    updateActiveHealthData({
+      medicationSchedules: schedules.map((item) =>
+        item.id === schedule.id
+          ? { ...item, reminderEnabled: next, updatedAt: new Date().toISOString() }
+          : item,
+      ),
+    });
+  };
+
   const recordTaken = (medication: Medication) => {
     const now = new Date().toISOString();
     updateActiveHealthData({
@@ -186,9 +205,12 @@ export default function MedicationsScreen() {
               {!!medication.prescribedDose && <Text style={styles.detail}>الجرعة الموصوفة: {medication.prescribedDose}</Text>}
               {!!medication.routeAndInstructions && <Text style={styles.detail}>{medication.routeAndInstructions}</Text>}
               {medicationSchedules.map((schedule) => (
-                <Text key={schedule.id} style={styles.schedule}>
-                  وقت مسجل: {schedule.times.join("، ")} · {schedule.reminderEnabled ? "التذكير مفعّل" : "التذكير غير مفعّل بعد"}
-                </Text>
+                <View key={schedule.id} style={styles.scheduleRow}>
+                  <Text style={styles.schedule}>وقت مسجل: {schedule.times.join("، ")}</Text>
+                  <Pressable onPress={() => void toggleReminder(schedule)} style={styles.reminderButton}>
+                    <Text style={styles.reminderButtonText}>{schedule.reminderEnabled ? "إيقاف التذكير" : "تفعيل التذكير"}</Text>
+                  </Pressable>
+                </View>
               ))}
               {lastEvents.length > 0 && (
                 <Text style={styles.detail}>آخر تسجيل: {lastEvents[0].status === "taken" ? "تم التناول" : lastEvents[0].status === "skipped" ? "تم التخطي" : "غير مسجل"} · {new Date(lastEvents[0].recordedAt ?? lastEvents[0].scheduledAt).toLocaleString("ar-JO")}</Text>
@@ -257,7 +279,10 @@ const styles = StyleSheet.create({
   statusPaused: { backgroundColor: C.amber },
   statusText: { color: C.navy, fontSize: 11, fontWeight: "800" },
   detail: { color: C.muted, fontSize: 12, textAlign: "right", lineHeight: 19, marginTop: 5 },
-  schedule: { color: C.teal, fontSize: 12, textAlign: "right", marginTop: 7, fontWeight: "700" },
+  schedule: { color: C.teal, fontSize: 12, textAlign: "right", marginTop: 7, fontWeight: "700", flex: 1 },
+  scheduleRow: { flexDirection: "row-reverse", alignItems: "center", gap: 8, marginTop: 5 },
+  reminderButton: { backgroundColor: C.soft, borderRadius: 9, paddingHorizontal: 9, paddingVertical: 7 },
+  reminderButtonText: { color: C.teal, fontSize: 10, fontWeight: "900" },
   actions: { flexDirection: "row-reverse", gap: 8, marginTop: 13 },
   secondaryAction: { flex: 1, minHeight: 42, borderRadius: 11, backgroundColor: C.navy, alignItems: "center", justifyContent: "center" },
   secondaryActionText: { color: "#FFF", fontSize: 12, fontWeight: "800" },
