@@ -413,7 +413,7 @@ export default function SettingsScreen() {
             في أي وقت.
           </Text>
           <View style={styles.versionRow}>
-            <Text style={styles.labelInline}>الإصدار الحالي</Text>
+            <Text style={styles.labelInline}>رقم الإصدار المثبت</Text>
             <Text style={styles.version}>v{version}</Text>
           </View>
           <Pressable
@@ -429,7 +429,7 @@ export default function SettingsScreen() {
               <ActivityIndicator color={palette.teal} />
             ) : (
               <Text style={styles.secondaryButtonText}>
-                التحقق من التحديثات الآن
+                فحص وتنزيل التحديث
               </Text>
             )}
           </Pressable>
