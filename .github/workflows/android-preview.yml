@@ -154,7 +154,9 @@ jobs:
       - name: Read app release version
         id: app-version
         if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
-        run: echo "version=$(node -p \"require('./package.json').version\")" >> "$GITHUB_OUTPUT"
+        run: |
+          VERSION=$(node -p 'require("./package.json").version')
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Create GitHub release
         if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
