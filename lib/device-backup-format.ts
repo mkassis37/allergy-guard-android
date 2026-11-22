@@ -19,7 +19,7 @@ function validateSnapshot(value: unknown): AllergySnapshot {
   if (!value || typeof value !== "object") {
     throw new Error("ملف النسخة الاحتياطية غير صالح.");
   }
-  const source = value as Partial<AllergySnapshot>;
+  const source = value as { schemaVersion?: unknown; patients?: unknown; activePatientId?: unknown };
   if (!Array.isArray(source.patients)) {
     throw new Error("النسخة الاحتياطية لا تحتوي على قائمة مرضى صالحة.");
   }
