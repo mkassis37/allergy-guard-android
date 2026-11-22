@@ -55,36 +55,28 @@ export default function EmergencyScreen() {
   const severeAllergies = allergies.filter((item) => item.severity === "شديدة");
   const [draft, setDraft] = useState(profile);
   const shareCard = async () => {
+    const medicineAllergies = allergies.filter((r) => r.kind === "medicine-allergy");
     const lines = [
-      "بطاقة الطوارئ الطبية — Allergy & Health Traker",
+      doctorMode
+        ? "بطاقة طوارئ طبية مختصرة للطبيب — Allergy & Health Traker"
+        : "بطاقة الطوارئ الطبية — Allergy & Health Traker",
       `الاسم: ${profile.fullName || "غير مسجل"}`,
-      `الأدوية المسببة: ${
-        allergies
-          .filter((r) => r.kind === "medicine-allergy")
-          .map(
-            (r) =>
-              `${r.name}${r.activeIngredient ? ` (${r.activeIngredient})` : ""}${r.dosage ? ` — ${r.dosage}` : ""}${r.frequency ? `، ${r.frequency}` : ""}`,
-          )
-          .join("، ") || "لا يوجد"
-      }`,
-      `الأطعمة المسببة: ${
-        allergies
-          .filter((r) => r.kind === "food-allergy")
-          .map((r) => r.name)
-          .join("، ") || "لا يوجد"
-      }`,
-      `حساسيات أخرى: ${
-        allergies
-          .filter((r) => r.kind === "other-allergy")
-          .map((r) => `${r.name}${r.severity ? ` (${r.severity})` : ""}`)
-          .join("، ") || "لا يوجد"
-      }`,
-      `الأدوية / العلاجات المسجلة: ${medicines.map((r) => `${r.name}${r.activeIngredient ? ` (${r.activeIngredient})` : ""}${r.dosage ? ` — ${r.dosage}` : ""}${r.frequency ? `، ${r.frequency}` : ""}`).join("، ") || "لا يوجد"}`,
-      `أدوية تم تحملها: ${tolerated.map((r) => `${r.name}${r.activeIngredient ? ` (${r.activeIngredient})` : ""}${r.dosage ? ` — ${r.dosage}` : ""}${r.frequency ? `، ${r.frequency}` : ""}`).join("، ") || "لا يوجد"}`,
-      `جهة الطوارئ: ${profile.emergencyContact || "غير مسجل"}`,
-      "هذه المعلومات سجل شخصي وليست تشخيصًا طبيًا.",
+      `فصيلة الدم: ${profile.bloodType || "غير مسجلة"}`,
+      `رقم الهاتف: ${profile.phone || "غير مسجل"}`,
+      `جهة الاتصال للطوارئ: ${profile.emergencyContact || "غير مسجلة"}`,
+      `الحساسيات الشديدة: ${severeAllergies.map((r) => `${r.name}${r.activeIngredient ? ` (${r.activeIngredient})` : ""}`).join("، ") || "لا توجد حساسية شديدة مسجلة"}`,
+      `الحساسيات الدوائية: ${medicineAllergies.map((r) => `${r.name}${r.activeIngredient ? ` (${r.activeIngredient})` : ""}${r.severity ? ` — الشدة: ${r.severity}` : ""}`).join("، ") || "لا يوجد"}`,
+      `الأدوية الحالية: ${medicines.map((r) => `${r.name}${r.activeIngredient ? ` (${r.activeIngredient})` : ""}${r.dosage ? ` — ${r.dosage}` : ""}${r.frequency ? `، ${r.frequency}` : ""}`).join("، ") || "لا يوجد"}`,
     ];
-    await Share.share({ message: lines.join("\n") });
+    if (!doctorMode) {
+      lines.push(
+        `الأطعمة المسببة: ${allergies.filter((r) => r.kind === "food-allergy").map((r) => `${r.name}${r.severity ? ` (${r.severity})` : ""}`).join("، ") || "لا يوجد"}`,
+        `حساسيات أخرى: ${allergies.filter((r) => r.kind === "other-allergy").map((r) => `${r.name}${r.severity ? ` (${r.severity})` : ""}`).join("، ") || "لا يوجد"}`,
+        `أدوية تم تحملها: ${tolerated.map((r) => r.name).join("، ") || "لا يوجد"}`,
+      );
+    }
+    lines.push("يرجى التحقق من هذه المعلومات مع المريض؛ هذه البطاقة سجل شخصي وليست تشخيصًا طبيًا.");
+    await Share.share({ message: lines.join("\\n") });
   };
   const save = () => {
     saveProfile(draft);
@@ -246,20 +238,24 @@ export default function EmergencyScreen() {
                 </View>
               ))
           )}
-          <Text style={styles.fieldHeading}>الأطعمة أو المكونات المسببة</Text>
-          <Text style={styles.foodText}>
-            {allergies
-              .filter((r) => r.kind === "food-allergy")
-              .map((r) => r.name)
-              .join("، ") || "لا توجد سجلات"}
-          </Text>
-          <Text style={styles.fieldHeading}>حساسيات أخرى</Text>
-          <Text style={styles.foodText}>
-            {allergies
-              .filter((r) => r.kind === "other-allergy")
-              .map((r) => `${r.name}${r.severity ? ` (${r.severity})` : ""}`)
-              .join("، ") || "لا توجد سجلات"}
-          </Text>
+          {!doctorMode ? (
+            <>
+                        <Text style={styles.fieldHeading}>الأطعمة أو المكونات المسببة</Text>
+                        <Text style={styles.foodText}>
+                          {allergies
+                            .filter((r) => r.kind === "food-allergy")
+                            .map((r) => r.name)
+                            .join("، ") || "لا توجد سجلات"}
+                        </Text>
+                        <Text style={styles.fieldHeading}>حساسيات أخرى</Text>
+                        <Text style={styles.foodText}>
+                          {allergies
+                            .filter((r) => r.kind === "other-allergy")
+                            .map((r) => `${r.name}${r.severity ? ` (${r.severity})` : ""}`)
+                            .join("، ") || "لا توجد سجلات"}
+                        </Text>
+            </>
+          ) : null}
           <Text style={styles.fieldHeading}>الأدوية / العلاجات المسجلة</Text>
           <Text style={styles.foodText}>
             {medicines
@@ -269,15 +265,17 @@ export default function EmergencyScreen() {
               )
               .join("، ") || "لا توجد سجلات"}
           </Text>
-          <Text style={styles.fieldHeading}>أدوية تم تحملها دون حساسية</Text>
-          <Text style={styles.foodText}>
-            {tolerated
-              .map(
-                (r) =>
-                  `${r.name}${r.activeIngredient ? ` (${r.activeIngredient})` : ""}${r.dosage ? ` — ${r.dosage}` : ""}${r.frequency ? `، ${r.frequency}` : ""}`,
-              )
-              .join("، ") || "لا توجد سجلات"}
-          </Text>
+          {!doctorMode ? (
+                      <Text style={styles.fieldHeading}>أدوية تم تحملها دون حساسية</Text>
+                      <Text style={styles.foodText}>
+                        {tolerated
+                          .map(
+                            (r) =>
+                              `${r.name}${r.activeIngredient ? ` (${r.activeIngredient})` : ""}${r.dosage ? ` — ${r.dosage}` : ""}${r.frequency ? `، ${r.frequency}` : ""}`,
+                          )
+                          .join("، ") || "لا توجد سجلات"}
+                      </Text>
+          ) : null}
         </View>
         <View style={styles.actions}>
           <Pressable
