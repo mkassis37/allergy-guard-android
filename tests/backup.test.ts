@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   decryptBackupPayload,
   encryptBackupPayload,
-  isEncryptedBackup,
+  isEncryptedBackup,\n  encryptJsonPayload,\n  decryptJsonPayload,
 } from "../lib/backup-crypto";
 import { csvRows, makeBackupPayload } from "../lib/backup-serialization";
 import { validateBackup } from "../lib/backup-format";
@@ -74,6 +74,33 @@ describe("local backup export and import", () => {
     expect(() => decryptJsonWithKey(JSON.stringify(envelope), key)).toThrow(
       "تعذر فك تشفير البيانات المحلية",
     );
+  });
+
+  it("encrypts the full multi-patient device backup with attachments", async () => {
+    const devicePayload = {
+      app: "allergy-guard-local-backup" as const,
+      schemaVersion: 2 as const,
+      exportedAt: "2026-11-22T00:00:00.000Z",
+      data: {
+        schemaVersion: 2 as const,
+        patients: [],
+        activePatientId: null,
+      },
+      attachments: [
+        {
+          uri: "file:///medical/report.pdf",
+          fileName: "report.pdf",
+          mimeType: "application/pdf",
+          base64: "JVBERi0=",
+        },
+      ],
+    };
+    const encrypted = await encryptJsonPayload(devicePayload, "كلمة-مرور-قوية");
+    expect(encrypted).not.toContain("report.pdf");
+    const restored = validateDeviceBackup(
+      await decryptJsonPayload(encrypted, "كلمة-مرور-قوية"),
+    );
+    expect(restored.attachments[0].fileName).toBe("report.pdf");
   });
 
   it("validates and preserves encrypted-backup attachment payloads", () => {
