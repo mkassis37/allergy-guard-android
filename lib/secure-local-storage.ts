@@ -75,11 +75,11 @@ export function decryptJsonWithKey<T>(raw: string, key: Uint8Array): T {
   }
 }
 
-async function getOrCreateDeviceKey() {
-  if (Platform.OS === "web") {
-    throw new Error("التخزين المشفر متاح في تطبيق Android فقط.");
-  }
-  const existing = await SecureStore.getItemAsync(DEVICE_KEY_NAME);
+async function getDeviceKey(createIfMissing: boolean) {
+  const existing =
+    Platform.OS === "web"
+      ? await AsyncStorage.getItem(`${DEVICE_KEY_NAME}-web`)
+      : await SecureStore.getItemAsync(DEVICE_KEY_NAME);
   if (existing) {
     const key = fromBase64(existing);
     if (key.length !== KEY_BYTES) {
@@ -87,20 +87,28 @@ async function getOrCreateDeviceKey() {
     }
     return key;
   }
+  if (!createIfMissing) {
+    throw new Error("مفتاح تشفير البيانات غير موجود. لم يتم تعديل النسخة المحفوظة.");
+  }
   const key = await Crypto.getRandomBytesAsync(KEY_BYTES);
-  await SecureStore.setItemAsync(DEVICE_KEY_NAME, toBase64(key));
+  if (Platform.OS === "web") {
+    // Web fallback is compatibility-only; browser storage is not hardware-backed.
+    await AsyncStorage.setItem(`${DEVICE_KEY_NAME}-web`, toBase64(key));
+  } else {
+    await SecureStore.setItemAsync(DEVICE_KEY_NAME, toBase64(key));
+  }
   return key;
 }
 
 export async function readEncryptedJson<T>(storageKey: string): Promise<T | null> {
   const raw = await AsyncStorage.getItem(storageKey);
   if (!raw) return null;
-  const key = await getOrCreateDeviceKey();
+  const key = await getDeviceKey(false);
   return decryptJsonWithKey<T>(raw, key);
 }
 
 export async function writeEncryptedJson(storageKey: string, value: unknown) {
-  const key = await getOrCreateDeviceKey();
+  const key = await getDeviceKey(true);
   const encrypted = encryptJsonWithKey(value, key);
   await AsyncStorage.setItem(storageKey, encrypted);
 }
