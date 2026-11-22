@@ -80,8 +80,8 @@ export function isEncryptedBackup(
   );
 }
 
-export async function encryptBackupPayload(
-  payload: BackupPayload,
+export async function encryptJsonPayload(
+  payload: unknown,
   password: string,
 ): Promise<string> {
   assertPassword(password);
@@ -105,10 +105,10 @@ export async function encryptBackupPayload(
   return JSON.stringify(envelope, null, 2);
 }
 
-export async function decryptBackupPayload(
+export async function decryptJsonPayload(
   raw: string,
   password: string,
-): Promise<BackupPayload> {
+): Promise<unknown> {
   assertPassword(password);
   let parsed: unknown;
   try {
@@ -117,7 +117,7 @@ export async function decryptBackupPayload(
     throw new Error("ملف النسخة المشفرة غير صالح.");
   }
   if (!isEncryptedBackup(parsed)) {
-    throw new Error("هذا الملف ليس نسخة مشفرة من Allergy & Health Traker.");
+    throw new Error("هذا الملف ليس نسخة مشفرة من Allergy & Health Tracker.");
   }
   if (
     !Number.isInteger(parsed.iterations) ||
@@ -136,11 +136,24 @@ export async function decryptBackupPayload(
     const key = await deriveKey(password, salt, parsed.iterations);
     const plaintext = nacl.secretbox.open(ciphertext, nonce, key);
     if (!plaintext) throw new Error("authentication failed");
-    const decoded = new TextDecoder().decode(plaintext);
-    return validateBackup(JSON.parse(decoded));
+    return JSON.parse(new TextDecoder().decode(plaintext));
   } catch {
     throw new Error("تعذر فك النسخة. تحقق من كلمة المرور وسلامة الملف.");
   }
+}
+
+export async function encryptBackupPayload(
+  payload: BackupPayload,
+  password: string,
+): Promise<string> {
+  return encryptJsonPayload(payload, password);
+}
+
+export async function decryptBackupPayload(
+  raw: string,
+  password: string,
+): Promise<BackupPayload> {
+  return validateBackup(await decryptJsonPayload(raw, password));
 }
 
 export const encryptionInfo = {
