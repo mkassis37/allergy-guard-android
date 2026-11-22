@@ -39,7 +39,7 @@ const records = [
 describe("local backup export and import", () => {
   it("creates a periodic local auto-backup payload", () => {
     const snapshot = {
-      schemaVersion: 2 as const,
+      schemaVersion: 3 as const,
       patients: [],
       activePatientId: null,
     };
