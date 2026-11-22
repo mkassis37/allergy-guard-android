@@ -54,7 +54,13 @@ export function useBiometricLock(timeoutMs = DEFAULT_TIMEOUT_MS) {
       .catch(() => mounted && setEnabled(false));
     const subscription = DeviceEventEmitter.addListener(
       BIOMETRIC_LOCK_CHANGED,
-      (value: boolean) => void applyEnabled(value === true),
+      (value: boolean) => {
+        if (!mounted) return;
+        setEnabled(value === true);
+        // The settings screen verifies biometrics before enabling the lock.
+        // Avoid presenting a second authentication prompt in the same session.
+        setLocked(false);
+      },
     );
     return () => {
       mounted = false;
