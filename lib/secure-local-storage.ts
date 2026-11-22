@@ -23,29 +23,39 @@ function fromBase64(value: string) {
   return Uint8Array.from(binary, (char) => char.charCodeAt(0));
 }
 
+let deviceKeyPromise: Promise<Uint8Array> | null = null;
+
 async function getDeviceKey(createIfMissing: boolean) {
-  const existing =
-    Platform.OS === "web"
-      ? await AsyncStorage.getItem(`${DEVICE_KEY_NAME}-web`)
-      : await SecureStore.getItemAsync(DEVICE_KEY_NAME);
-  if (existing) {
-    const key = fromBase64(existing);
-    if (key.length !== KEY_BYTES) {
-      throw new Error("مفتاح حماية البيانات المحلية غير صالح.");
-    }
-    return key;
+  if (!deviceKeyPromise) {
+    deviceKeyPromise = (async () => {
+      const existing =
+        Platform.OS === "web"
+          ? await AsyncStorage.getItem(`${DEVICE_KEY_NAME}-web`)
+          : await SecureStore.getItemAsync(DEVICE_KEY_NAME);
+      if (existing) {
+        const key = fromBase64(existing);
+        if (key.length !== KEY_BYTES) {
+          throw new Error("مفتاح حماية البيانات المحلية غير صالح.");
+        }
+        return key;
+      }
+      if (!createIfMissing) {
+        throw new Error("مفتاح تشفير البيانات غير موجود. لم يتم تعديل النسخة المحفوظة.");
+      }
+      const key = await Crypto.getRandomBytesAsync(KEY_BYTES);
+      if (Platform.OS === "web") {
+        // Compatibility fallback only; browser storage is not hardware-backed.
+        await AsyncStorage.setItem(`${DEVICE_KEY_NAME}-web`, toBase64(key));
+      } else {
+        await SecureStore.setItemAsync(DEVICE_KEY_NAME, toBase64(key));
+      }
+      return key;
+    })().catch((error) => {
+      deviceKeyPromise = null;
+      throw error;
+    });
   }
-  if (!createIfMissing) {
-    throw new Error("مفتاح تشفير البيانات غير موجود. لم يتم تعديل النسخة المحفوظة.");
-  }
-  const key = await Crypto.getRandomBytesAsync(KEY_BYTES);
-  if (Platform.OS === "web") {
-    // Compatibility fallback only; browser storage is not hardware-backed.
-    await AsyncStorage.setItem(`${DEVICE_KEY_NAME}-web`, toBase64(key));
-  } else {
-    await SecureStore.setItemAsync(DEVICE_KEY_NAME, toBase64(key));
-  }
-  return key;
+  return deviceKeyPromise;
 }
 
 export async function readEncryptedJson<T>(storageKey: string): Promise<T | null> {
