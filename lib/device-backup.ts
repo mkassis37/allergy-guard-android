@@ -156,6 +156,13 @@ function normalizeImportedBackup(value: unknown): DeviceBackupFile {
       ...legacy.profile,
       id: patientId,
       records: legacy.records,
+      medications: [],
+      medicationSchedules: [],
+      doseEvents: [],
+      conditions: [],
+      measurements: [],
+      appointments: [],
+      labResults: [],
       createdAt: now,
       updatedAt: now,
     };
@@ -164,7 +171,7 @@ function normalizeImportedBackup(value: unknown): DeviceBackupFile {
       schemaVersion: 2,
       exportedAt: now,
       data: {
-        schemaVersion: 2,
+        schemaVersion: 3,
         patients: [patient],
         activePatientId: patientId,
       },
