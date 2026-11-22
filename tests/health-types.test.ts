@@ -71,7 +71,7 @@ describe("patient health data schema v3", () => {
       }],
     });
 
-    expect(result.medicationSchedules[0].enabled).toBe(false);
+    expect(result.medicationSchedules).toHaveLength(0);
     expect(result.doseEvents).toHaveLength(0);
   });
 
