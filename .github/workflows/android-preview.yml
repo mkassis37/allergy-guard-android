@@ -78,6 +78,7 @@ jobs:
           set -euo pipefail
           grep -q 'const CURRENT_ITERATIONS = 20_000' lib/email-backup.ts
           grep -q 'envelope.iterations' lib/email-backup.ts
+          grep -q 'const CURRENT_ITERATIONS = 210_000' lib/backup-crypto.ts
           grep -q 'parsed.iterations' lib/backup-crypto.ts
           echo "Backup KDF compatibility guard passed."
 
