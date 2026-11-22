@@ -8,6 +8,7 @@ import React, {
   useRef,
   useState,
 } from "react";
+import { normalizePatientHealthData, type PatientHealthData } from "./health-types";
 import {
   AUTO_BACKUP_INTERVAL_MS,
   AUTO_BACKUP_STORAGE_KEY,
@@ -57,7 +58,7 @@ export type Profile = {
   notes?: string;
 };
 
-export type Patient = Profile & {
+export type Patient = Profile & PatientHealthData & {
   id: string;
   records: AllergyRecord[];
   createdAt: string;
@@ -67,7 +68,7 @@ export type Patient = Profile & {
 export type PatientInput = Profile;
 
 export type AllergySnapshot = {
-  schemaVersion: 2;
+  schemaVersion: 3;
   patients: Patient[];
   activePatientId: string | null;
 };
@@ -100,6 +101,7 @@ type StoreValue = {
 const STORAGE_KEY_V3 = "allergy-guard-data-v3-encrypted";
 const STORAGE_KEY_V2 = "allergy-guard-data-v2";
 const STORAGE_KEY_V1 = "allergy-guard-data-v1";
+const PRE_V3_RECOVERY_KEY = "allergy-guard-pre-v3-recovery-encrypted";
 
 export const emptyProfile: Profile = {
   fullName: "",
@@ -210,6 +212,7 @@ function normalizePatients(value: unknown): Patient[] {
         ...profile,
         id: typeof source.id === "string" ? source.id : makeId("patient"),
         records: normalizeRecords(source.records),
+        ...normalizePatientHealthData(source as Record<string, unknown>),
         createdAt:
           typeof source.createdAt === "string" ? source.createdAt : now,
         updatedAt:
@@ -248,6 +251,7 @@ export function AllergyProvider({ children }: { children: React.ReactNode }) {
     (async () => {
       try {
         const encrypted = await readEncryptedJson<{
+          schemaVersion?: unknown;
           patients?: unknown;
           activePatientId?: unknown;
         }>(STORAGE_KEY_V3);
@@ -256,6 +260,10 @@ export function AllergyProvider({ children }: { children: React.ReactNode }) {
             throw new Error("البيانات المشفرة لا تحتوي على قائمة مرضى صالحة.");
           }
           const restored = normalizePatients(encrypted.patients);
+          if (encrypted.schemaVersion !== 3) {
+            const recovery = await readEncryptedJson<unknown>(PRE_V3_RECOVERY_KEY);
+            if (!recovery) await writeEncryptedJson(PRE_V3_RECOVERY_KEY, encrypted);
+          }
           if (!mounted) return;
           setPatients(restored);
           const requested =
@@ -286,8 +294,9 @@ export function AllergyProvider({ children }: { children: React.ReactNode }) {
             typeof parsed.activePatientId === "string"
               ? parsed.activePatientId
               : null;
+          await writeEncryptedJson(PRE_V3_RECOVERY_KEY, parsed);
           const migrated = {
-            schemaVersion: 2 as const,
+            schemaVersion: 3 as const,
             patients: restored,
             activePatientId:
               requested && restored.some((p) => p.id === requested)
@@ -353,7 +362,7 @@ export function AllergyProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!hydrated || storageError) return;
     const snapshot: AllergySnapshot = {
-      schemaVersion: 2,
+      schemaVersion: 3,
       patients,
       activePatientId,
     };
@@ -376,7 +385,7 @@ export function AllergyProvider({ children }: { children: React.ReactNode }) {
     if (!hydrated || storageError) return;
     const interval = setInterval(async () => {
       const snapshot: AllergySnapshot = {
-        schemaVersion: 2,
+        schemaVersion: 3,
         patients,
         activePatientId,
       };
@@ -412,7 +421,7 @@ export function AllergyProvider({ children }: { children: React.ReactNode }) {
       activePatient,
       records: activePatient?.records ?? [],
       profile: profileFromPatient(activePatient),
-      snapshot: { schemaVersion: 2, patients, activePatientId },
+      snapshot: { schemaVersion: 3, patients, activePatientId },
       autoBackupSavedAt,
       hydrated,
       storageError,
@@ -423,6 +432,7 @@ export function AllergyProvider({ children }: { children: React.ReactNode }) {
           ...normalizeProfile(input),
           id,
           records: [],
+          ...normalizePatientHealthData({}),
           createdAt: now,
           updatedAt: now,
         };
@@ -523,6 +533,7 @@ export function AllergyProvider({ children }: { children: React.ReactNode }) {
               ...normalizedProfile,
               id,
               records: normalizedRecords,
+              ...normalizePatientHealthData({}),
               createdAt: now,
               updatedAt: now,
             },
