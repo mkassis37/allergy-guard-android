@@ -266,15 +266,17 @@ export default function EmergencyScreen() {
               .join("، ") || "لا توجد سجلات"}
           </Text>
           {!doctorMode ? (
-                      <Text style={styles.fieldHeading}>أدوية تم تحملها دون حساسية</Text>
-                      <Text style={styles.foodText}>
-                        {tolerated
-                          .map(
-                            (r) =>
-                              `${r.name}${r.activeIngredient ? ` (${r.activeIngredient})` : ""}${r.dosage ? ` — ${r.dosage}` : ""}${r.frequency ? `، ${r.frequency}` : ""}`,
-                          )
-                          .join("، ") || "لا توجد سجلات"}
-                      </Text>
+            <>
+              <Text style={styles.fieldHeading}>أدوية تم تحملها دون حساسية</Text>
+              <Text style={styles.foodText}>
+                {tolerated
+                  .map(
+                    (r) =>
+                      `${r.name}${r.activeIngredient ? ` (${r.activeIngredient})` : ""}${r.dosage ? ` — ${r.dosage}` : ""}${r.frequency ? `، ${r.frequency}` : ""}`,
+                  )
+                  .join("، ") || "لا توجد سجلات"}
+              </Text>
+            </>
           ) : null}
         </View>
         <View style={styles.actions}>
