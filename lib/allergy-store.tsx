@@ -250,7 +250,10 @@ export function AllergyProvider({ children }: { children: React.ReactNode }) {
           activePatientId?: unknown;
         }>(STORAGE_KEY_V3);
         if (encrypted) {
-          if (!Array.isArray(encrypted.patients)) {\n            throw new Error("البيانات المشفرة لا تحتوي على قائمة مرضى صالحة.");\n          }\n          const restored = normalizePatients(encrypted.patients);
+          if (!Array.isArray(encrypted.patients)) {
+            throw new Error("البيانات المشفرة لا تحتوي على قائمة مرضى صالحة.");
+          }
+          const restored = normalizePatients(encrypted.patients);
           if (!mounted) return;
           setPatients(restored);
           const requested =
@@ -273,7 +276,10 @@ export function AllergyProvider({ children }: { children: React.ReactNode }) {
             patients?: unknown;
             activePatientId?: unknown;
           };
-          if (!Array.isArray(parsed.patients)) {\n            throw new Error("النسخة القديمة لا تحتوي على قائمة مرضى صالحة؛ لم يتم حذفها.");\n          }\n          const restored = normalizePatients(parsed.patients);
+          if (!Array.isArray(parsed.patients)) {
+            throw new Error("النسخة القديمة لا تحتوي على قائمة مرضى صالحة؛ لم يتم حذفها.");
+          }
+          const restored = normalizePatients(parsed.patients);
           const requested =
             typeof parsed.activePatientId === "string"
               ? parsed.activePatientId
@@ -300,6 +306,9 @@ export function AllergyProvider({ children }: { children: React.ReactNode }) {
             records?: unknown;
             profile?: unknown;
           };
+          if (!Array.isArray(parsed.records)) {
+            throw new Error("البيانات القديمة لا تحتوي على سجلات صالحة؛ لم يتم حذفها.");
+          }
           const profile = normalizeProfile(parsed.profile);
           const now = new Date().toISOString();
           const patient: Patient = {
