@@ -51,14 +51,15 @@ export function validateDeviceBackup(value: unknown): DeviceBackupFile {
   ) {
     throw new Error("هذا الملف ليس نسخة حارس الحساسية.");
   }
+  if (source.schemaVersion === 2 && !Array.isArray(source.attachments)) {
+    throw new Error("النسخة لا تحتوي على قائمة مرفقات صالحة.");
+  }
   const attachments =
-    source.schemaVersion === 2 && Array.isArray(source.attachments)
-      ? source.attachments
-      : [];
+    source.schemaVersion === 2 ? source.attachments as unknown[] : [];
   if (attachments.length > 200) {
     throw new Error("تحتوي النسخة على عدد مرفقات يتجاوز الحد المسموح.");
   }
-  const normalizedAttachments = attachments.map((item) => {
+  let totalEncodedBytes = 0;\n  const normalizedAttachments = attachments.map((item) => {
     if (!item || typeof item !== "object") {
       throw new Error("بيانات أحد المرفقات غير صالحة.");
     }
