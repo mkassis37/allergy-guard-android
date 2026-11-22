@@ -151,12 +151,12 @@ function normalizeMedicationText(value: string) {
   return value
     .normalize("NFKC")
     .toLocaleLowerCase("ar")
-    .replace(/[\\u064B-\\u065F\\u0670]/g, "")
+    .replace(/[\u064B-\u065F\u0670]/g, "")
     .replace(/[أإآ]/g, "ا")
     .replace(/[ى]/g, "ي")
-    .replace(/[^a-z0-9\\u0600-\\u06FF]+/g, " ")
+    .replace(/[^a-z0-9\u0600-\u06FF]+/g, " ")
     .trim()
-    .replace(/\\s+/g, " ");
+    .replace(/\s+/g, " ");
 }
 
 function Field({
