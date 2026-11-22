@@ -6,7 +6,8 @@ import {
 } from "../lib/backup-crypto";
 import { csvRows, makeBackupPayload } from "../lib/backup-serialization";
 import { validateBackup } from "../lib/backup-format";
-import { validateDeviceBackup } from "../lib/device-backup-format";\nimport { decryptJsonWithKey, encryptJsonWithKey } from "../lib/local-crypto";
+import { validateDeviceBackup } from "../lib/device-backup-format";
+import { decryptJsonWithKey, encryptJsonWithKey } from "../lib/local-crypto";
 import {
   AUTO_BACKUP_INTERVAL_MS,
   createAutoBackupFile,
@@ -98,7 +99,8 @@ describe("local backup export and import", () => {
     expect(result.attachments).toHaveLength(1);
     expect(result.attachments[0].fileName).toBe("report.pdf");
   });
-\n  it("creates a valid JSON payload for local export", () => {
+
+  it("creates a valid JSON payload for local export", () => {
     const payload = makeBackupPayload(profile, records);
     const restored = validateBackup(JSON.parse(JSON.stringify(payload)));
     expect(restored.app).toBe("allergy-guard");
