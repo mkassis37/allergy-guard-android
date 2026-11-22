@@ -73,6 +73,8 @@ export default function TabLayout() {
           ),
         }}
       />
+      <Tabs.Screen name="health" options={{ href: null }} />
+      <Tabs.Screen name="appointments" options={{ href: null }} />
       <Tabs.Screen
         name="settings"
         options={{
