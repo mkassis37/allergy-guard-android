@@ -1,3 +1,5 @@
+import { isEncryptedBackup } from "./backup-crypto";
+
 const DRIVE_API = "https://www.googleapis.com/drive/v3";
 const DRIVE_UPLOAD_API = "https://www.googleapis.com/upload/drive/v3";
 const BACKUP_FOLDER_NAME = "Allergy & Health Tracker Backups";
@@ -57,8 +59,14 @@ export async function uploadEncryptedBackupToDrive(
   encryptedBackup: string,
 ): Promise<DriveFile> {
   if (!accessToken.trim()) throw new Error("حساب Google Drive غير مربوط.");
-  if (!filename.endsWith(".agbackup") || encryptedBackup.length < 80) {
+  let envelope: unknown;
+  try {
+    envelope = JSON.parse(encryptedBackup);
+  } catch {
     throw new Error("ملف النسخة المشفرة غير صالح للرفع.");
+  }
+  if (!filename.endsWith(".agbackup") || !isEncryptedBackup(envelope)) {
+    throw new Error("لن يتم رفع ملف غير مشفر أو غير متوافق مع صيغة النسخ الاحتياطي.");
   }
 
   const folderId = await findOrCreateBackupFolder(accessToken);
