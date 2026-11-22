@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";\nimport { useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   ActivityIndicator,
@@ -56,7 +56,7 @@ const C = {
   brownSoft: "#F7F1EF",
 };
 
-type FilterKey = "all" | RecordKind;
+type FilterKey = "all" | "allergies" | RecordKind;
 
 type KindOption = {
   key: RecordKind;
@@ -135,7 +135,7 @@ const kindOptions: KindOption[] = [
 ];
 
 const filters: Array<{ key: FilterKey; label: string }> = [
-  { key: "all", label: "الكل" },
+  { key: "all", label: "الكل" },\n  { key: "allergies", label: "الحساسيات" },
   ...kindOptions.map(({ key, label }) => ({ key, label })),
 ];
 
@@ -209,7 +209,7 @@ export default function RecordsScreen() {
     deleteRecord,
   } = useAllergy();
 
-  const [filter, setFilter] = useState<FilterKey>("all");
+  const [filter, setFilter] = useState<FilterKey>("all");\n  const [reportsExpanded, setReportsExpanded] = useState(false);
   const [query, setQuery] = useState("");
   const [viewRecord, setViewRecord] = useState<AllergyRecord | null>(null);
   const [editorVisible, setEditorVisible] = useState(false);
@@ -231,10 +231,10 @@ export default function RecordsScreen() {
   const [exporting, setExporting] = useState<"pdf" | "csv" | null>(null);
   const [saving, setSaving] = useState(false);
 
-  const shown = useMemo(() => {
+  useEffect(() => {\n    const requested = routeParams.filter;\n    if (requested === "allergies" || requested === "all" || kindOptions.some((item) => item.key === requested)) {\n      setFilter((requested || "all") as FilterKey);\n      setQuery("");\n    }\n  }, [routeParams.filter]);\n\n  const shown = useMemo(() => {
     const normalizedQuery = query.trim().toLocaleLowerCase("ar");
     return records.filter((item) => {
-      if (filter !== "all" && item.kind !== filter) return false;
+      if (filter === "allergies" && !["medicine-allergy", "food-allergy", "other-allergy"].includes(item.kind)) return false;\n      if (filter !== "all" && filter !== "allergies" && item.kind !== filter) return false;
       if (!normalizedQuery) return true;
       return [
         item.name,
@@ -574,89 +574,42 @@ export default function RecordsScreen() {
                 <Text style={styles.sectionTitle}>إضافة معلومة صحية</Text>
               </View>
 
-              <View style={styles.quickAddGrid}>
-                {kindOptions.map((option) => (
-                  <Pressable
-                    key={option.key}
-                    onPress={() => openAdd(option.key)}
-                    style={({ pressed }) => [
-                      styles.quickAddCard,
-                      {
-                        backgroundColor: option.soft,
-                        borderColor: `${option.color}30`,
-                      },
-                      pressed && styles.quickPressed,
-                    ]}
-                    accessibilityRole="button"
-                    accessibilityLabel={`إضافة ${option.label}`}
-                  >
-                    <View style={styles.quickTopRow}>
-                      <View
-                        style={[
-                          styles.countPill,
-                          { backgroundColor: option.color },
-                        ]}
-                      >
-                        <Text style={styles.countText}>
-                          {counts[option.key] ?? 0}
-                        </Text>
-                      </View>
-                      <Text style={styles.quickIcon}>{option.icon}</Text>
-                    </View>
-                    <Text style={[styles.quickTitle, { color: option.color }]}>
-                      {option.label}
-                    </Text>
-                    <Text style={styles.quickDescription}>
-                      {option.description}
-                    </Text>
-                    <View
-                      style={[
-                        styles.quickAddButton,
-                        { backgroundColor: option.color },
-                      ]}
-                    >
-                      <Text style={styles.quickAddButtonText}>＋ إضافة</Text>
-                    </View>
-                  </Pressable>
-                ))}
+              <View style={styles.addSection}>
+                <View style={styles.addSectionCopy}>
+                  <Text style={styles.addSectionTitle}>إضافة سجل صحي</Text>
+                  <Text style={styles.addSectionHint}>اضغط لإضافة سجل، ثم اختر نوعه من النموذج. يمكنك إرفاق التقارير الطبية.</Text>
+                </View>
+                <Pressable onPress={() => openAdd("medicine")} style={({ pressed }) => [styles.primaryAddButton, pressed && styles.quickPressed]}>
+                  <Text style={styles.primaryAddButtonText}>＋ إضافة سجل جديد</Text>
+                </Pressable>
               </View>
 
               <View style={styles.exportSection}>
-                <Text style={styles.exportSectionTitle}>تقارير المريض</Text>
-                <View style={styles.exportActions}>
-                  <Pressable
-                    onPress={createPdf}
-                    disabled={!activePatient || exporting !== null}
-                    style={({ pressed }) => [
-                      styles.reportButton,
-                      pressed && styles.pressed,
-                      (!activePatient || exporting !== null) && styles.disabled,
-                    ]}
-                  >
-                    {exporting === "pdf" ? (
-                      <ActivityIndicator color={C.teal} size="small" />
-                    ) : (
-                      <Text style={styles.reportButtonText}>📄 تصدير PDF</Text>
-                    )}
-                  </Pressable>
-                  <Pressable
-                    onPress={createCsv}
-                    disabled={!activePatient || exporting !== null}
-                    style={({ pressed }) => [
-                      styles.reportButton,
-                      pressed && styles.pressed,
-                      (!activePatient || exporting !== null) && styles.disabled,
-                    ]}
-                  >
-                    {exporting === "csv" ? (
-                      <ActivityIndicator color={C.teal} size="small" />
-                    ) : (
-                      <Text style={styles.reportButtonText}>
-                        📊 تصدير Excel
-                      </Text>
-                    )}
-                  </Pressable>
-                </View>
+                <Pressable onPress={() => setReportsExpanded((value) => !value)} style={styles.reportHeader}>
+                  <Text style={styles.reportChevron}>{reportsExpanded ? "−" : "+"}</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.exportSectionTitle}>تقارير المريض والتصدير</Text>
+                    <Text style={styles.reportHint}>ملفات PDF وExcel للسجلات الحالية</Text>
+                  </View>
+                </Pressable>
+                {reportsExpanded ? (
+                  <View style={styles.exportActions}>
+                    <Pressable
+                      onPress={createPdf}
+                      disabled={!activePatient || exporting !== null}
+                      style={({ pressed }) => [styles.reportButton, pressed && styles.pressed, (!activePatient || exporting !== null) && styles.disabled]}
+                    >
+                      {exporting === "pdf" ? <ActivityIndicator color={C.teal} size="small" /> : <Text style={styles.reportButtonText}>📄 تصدير PDF</Text>}
+                    </Pressable>
+                    <Pressable
+                      onPress={createCsv}
+                      disabled={!activePatient || exporting !== null}
+                      style={({ pressed }) => [styles.reportButton, pressed && styles.pressed, (!activePatient || exporting !== null) && styles.disabled]}
+                    >
+                      {exporting === "csv" ? <ActivityIndicator color={C.teal} size="small" /> : <Text style={styles.reportButtonText}>📊 تصدير Excel</Text>}
+                    </Pressable>
+                  </View>
+                ) : null}
               </View>
 
               <Text style={styles.savedTitle}>السجلات المحفوظة</Text>
@@ -1359,7 +1312,7 @@ const styles = StyleSheet.create({
     textAlign: "right",
     marginBottom: 3,
   },
-  quickAddGrid: {
+  addSection: { backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: 20, padding: 16, marginBottom: 14, gap: 12 },\n  addSectionCopy: { alignItems: "flex-end" },\n  addSectionTitle: { color: C.navy, fontSize: 20, fontWeight: "900", textAlign: "right" },\n  addSectionHint: { color: C.muted, fontSize: 13, lineHeight: 20, textAlign: "right", marginTop: 4 },\n  primaryAddButton: { minHeight: 54, borderRadius: 15, backgroundColor: C.teal, alignItems: "center", justifyContent: "center" },\n  primaryAddButtonText: { color: "#FFFFFF", fontSize: 17, fontWeight: "900" },\n  reportHeader: { flexDirection: "row-reverse", alignItems: "center", gap: 10 },\n  reportChevron: { color: C.teal, fontSize: 26, fontWeight: "900", width: 30, textAlign: "center" },\n  reportHint: { color: C.muted, fontSize: 12, textAlign: "right", marginTop: 3 },\n  quickAddGrid: {
     flexDirection: "row-reverse",
     flexWrap: "wrap",
     gap: 10,
