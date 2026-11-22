@@ -6,7 +6,7 @@ import {
 } from "../lib/backup-crypto";
 import { csvRows, makeBackupPayload } from "../lib/backup-serialization";
 import { validateBackup } from "../lib/backup-format";
-import { validateDeviceBackup } from "../lib/device-backup-format";\nimport { decryptJsonWithKey, encryptJsonWithKey } from "../lib/secure-local-storage";
+import { validateDeviceBackup } from "../lib/device-backup-format";\nimport { decryptJsonWithKey, encryptJsonWithKey } from "../lib/local-crypto";
 import {
   AUTO_BACKUP_INTERVAL_MS,
   createAutoBackupFile,
