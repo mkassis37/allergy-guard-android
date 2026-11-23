@@ -18,6 +18,7 @@ import { useAllergy } from "@/lib/allergy-store";
 import { useGithubUpdater } from "@/hooks/use-github-updater";
 import { useBiometricLock } from "@/lib/biometric-lock";
 import { getGovernmentEmergencyNumber } from "@/lib/emergency-settings";
+import { AppDesign } from "@/constants/app-design";
 
 try {
   I18nManager.allowRTL(true);
@@ -72,7 +73,7 @@ function BiometricGate() {
         position: "absolute",
         inset: 0,
         zIndex: 100,
-        backgroundColor: "#F5FAFB",
+        backgroundColor: AppDesign.colors.background,
         alignItems: "center",
         justifyContent: "center",
         padding: 28,
@@ -82,7 +83,7 @@ function BiometricGate() {
       <Text
         style={{
           marginTop: 18,
-          color: "#17324D",
+          color: AppDesign.colors.navy,
           fontSize: 26,
           fontWeight: "900",
           textAlign: "center",
@@ -93,7 +94,7 @@ function BiometricGate() {
       <Text
         style={{
           marginTop: 10,
-          color: "#637787",
+          color: AppDesign.colors.muted,
           fontSize: 16,
           lineHeight: 25,
           textAlign: "center",
@@ -108,7 +109,7 @@ function BiometricGate() {
           minHeight: 54,
           minWidth: 220,
           borderRadius: 16,
-          backgroundColor: "#087E8B",
+          backgroundColor: AppDesign.colors.teal,
           alignItems: "center",
           justifyContent: "center",
           paddingHorizontal: 20,
@@ -126,13 +127,13 @@ function BiometricGate() {
           minWidth: 220,
           borderRadius: 16,
           borderWidth: 2,
-          borderColor: "#B23A48",
+          borderColor: AppDesign.colors.danger,
           alignItems: "center",
           justifyContent: "center",
           paddingHorizontal: 18,
         }}
       >
-        <Text style={{ color: "#B23A48", fontSize: 16, fontWeight: "900" }}>
+        <Text style={{ color: AppDesign.colors.danger, fontSize: 16, fontWeight: "900" }}>
           {showCard ? "إخفاء بطاقة الطوارئ" : "عرض بطاقة الطوارئ"}
         </Text>
       </Pressable>
@@ -147,7 +148,7 @@ function BiometricGate() {
         >
           <Text
             style={{
-              color: "#B23A48",
+              color: AppDesign.colors.danger,
               fontSize: 19,
               fontWeight: "900",
               textAlign: "right",
@@ -157,7 +158,7 @@ function BiometricGate() {
           </Text>
           <Text
             style={{
-              color: "#17324D",
+              color: AppDesign.colors.navy,
               fontSize: 16,
               fontWeight: "800",
               textAlign: "right",
@@ -168,7 +169,7 @@ function BiometricGate() {
           </Text>
           <Text
             style={{
-              color: "#17324D",
+              color: AppDesign.colors.navy,
               fontSize: 16,
               fontWeight: "800",
               textAlign: "right",
@@ -179,7 +180,7 @@ function BiometricGate() {
           </Text>
           <Text
             style={{
-              color: "#B23A48",
+              color: AppDesign.colors.danger,
               fontSize: 16,
               fontWeight: "900",
               textAlign: "right",
@@ -191,7 +192,7 @@ function BiometricGate() {
           </Text>
           <Text
             style={{
-              color: "#637787",
+              color: AppDesign.colors.muted,
               fontSize: 14,
               textAlign: "right",
               marginTop: 5,
@@ -201,7 +202,7 @@ function BiometricGate() {
           </Text>
           <Text
             style={{
-              color: "#637787",
+              color: AppDesign.colors.muted,
               fontSize: 14,
               textAlign: "right",
               marginTop: 5,
@@ -213,7 +214,7 @@ function BiometricGate() {
             onPress={() => void Linking.openURL(`tel:${governmentNumber}`)}
             style={{
               marginTop: 10,
-              backgroundColor: "#B23A48",
+              backgroundColor: AppDesign.colors.danger,
               borderRadius: 12,
               minHeight: 44,
               alignItems: "center",
@@ -231,7 +232,7 @@ function BiometricGate() {
               }
               style={{
                 marginTop: 10,
-                backgroundColor: "#B23A48",
+                backgroundColor: AppDesign.colors.danger,
                 borderRadius: 12,
                 minHeight: 44,
                 alignItems: "center",
@@ -258,7 +259,7 @@ function BiometricGate() {
           paddingHorizontal: 18,
         }}
       >
-        <Text style={{ color: "#17324D", fontSize: 17, fontWeight: "900" }}>
+        <Text style={{ color: AppDesign.colors.navy, fontSize: 17, fontWeight: "900" }}>
           {showFirstAid
             ? "إخفاء تعليمات الإسعاف الأولي"
             : "تعليمات الإسعاف الأولي"}
