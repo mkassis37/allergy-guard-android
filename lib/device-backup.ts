@@ -65,9 +65,11 @@ function mimeTypeFromName(name: string) {
 async function collectAttachments(snapshot: AllergySnapshot) {
   const uris = [
     ...new Set(
-      snapshot.patients.flatMap((patient) =>
-        patient.records.flatMap((record) => record.attachmentUris ?? []),
-      ),
+      snapshot.patients.flatMap((patient) => [
+        ...patient.records.flatMap((record) => record.attachmentUris ?? []),
+        ...patient.appointments.flatMap((appointment) => appointment.attachmentUris ?? []),
+        ...patient.labResults.flatMap((result) => result.attachmentUris ?? []),
+      ]),
     ),
   ];
   const attachments: DeviceBackupAttachment[] = [];
@@ -113,7 +115,7 @@ async function collectAttachments(snapshot: AllergySnapshot) {
   return attachments;
 }
 
-export async function shareLocalBackup(
+export async function createEncryptedDeviceBackup(
   snapshot: AllergySnapshot,
   password: string,
 ) {
@@ -127,8 +129,19 @@ export async function shareLocalBackup(
     data: snapshot,
     attachments: await collectAttachments(snapshot),
   };
-  const encrypted = await encryptJsonPayload(payload, password);
-  const filename = backupFilename();
+  return {
+    encrypted: await encryptJsonPayload(payload, password),
+    filename: backupFilename(),
+    attachmentCount: payload.attachments.length,
+  };
+}
+
+export async function shareLocalBackup(
+  snapshot: AllergySnapshot,
+  password: string,
+) {
+  const { encrypted, filename, attachmentCount } =
+    await createEncryptedDeviceBackup(snapshot, password);
   const baseDirectory = FileSystem.cacheDirectory ?? FileSystem.documentDirectory;
   if (!baseDirectory) throw new Error("مساحة حفظ النسخة غير متاحة.");
   const uri = `${baseDirectory}${filename}`;
@@ -136,7 +149,7 @@ export async function shareLocalBackup(
     encoding: FileSystem.EncodingType.UTF8,
   });
   await shareFile(uri);
-  return { uri, filename, attachmentCount: payload.attachments.length };
+  return { uri, filename, attachmentCount };
 }
 
 export type PickedDeviceBackup = {
@@ -156,6 +169,13 @@ function normalizeImportedBackup(value: unknown): DeviceBackupFile {
       ...legacy.profile,
       id: patientId,
       records: legacy.records,
+      medications: [],
+      medicationSchedules: [],
+      doseEvents: [],
+      conditions: [],
+      measurements: [],
+      appointments: [],
+      labResults: [],
       createdAt: now,
       updatedAt: now,
     };
@@ -164,7 +184,7 @@ function normalizeImportedBackup(value: unknown): DeviceBackupFile {
       schemaVersion: 2,
       exportedAt: now,
       data: {
-        schemaVersion: 2,
+        schemaVersion: 3,
         patients: [patient],
         activePatientId: patientId,
       },
@@ -232,6 +252,23 @@ export async function restoreLocalBackupAttachments(
     restoredUris.set(attachment.uri, destination);
   }
 
+  const remapAttachmentUris = async (sourceUris: string[] = []) => {
+    const uris: string[] = [];
+    for (const uri of sourceUris) {
+      const mapped = restoredUris.get(uri);
+      if (mapped) {
+        uris.push(mapped);
+        continue;
+      }
+      try {
+        if ((await FileSystem.getInfoAsync(uri)).exists) uris.push(uri);
+      } catch {
+        // Missing optional attachments are omitted from the restored record.
+      }
+    }
+    return uris;
+  };
+
   const patients = await Promise.all(
     backup.data.patients.map(async (patient) => ({
       ...patient,
@@ -261,6 +298,14 @@ export async function restoreLocalBackupAttachments(
           return { ...record, attachmentUris: uris, notes };
         }),
       ),
+      appointments: await Promise.all((patient.appointments ?? []).map(async (appointment) => ({
+        ...appointment,
+        attachmentUris: await remapAttachmentUris(appointment.attachmentUris ?? []),
+      }))),
+      labResults: await Promise.all((patient.labResults ?? []).map(async (result) => ({
+        ...result,
+        attachmentUris: await remapAttachmentUris(result.attachmentUris ?? []),
+      }))),
     })),
   );
 

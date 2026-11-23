@@ -17,7 +17,7 @@ export default function TabLayout() {
         tabBarActiveTintColor: colors.tint,
         tabBarInactiveTintColor: colors.muted,
         tabBarButton: HapticTab,
-        tabBarLabelStyle: { fontSize: 11, fontWeight: "800" },
+        tabBarLabelStyle: { fontSize: 10, fontWeight: "800" },
         tabBarStyle: {
           paddingTop: 7,
           paddingBottom: bottomPadding,
@@ -28,51 +28,15 @@ export default function TabLayout() {
         },
       }}
     >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: "الرئيسية",
-          tabBarIcon: ({ color }) => (
-            <IconSymbol size={23} name="house.fill" color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="emergency"
-        options={{
-          title: "الطوارئ",
-          tabBarIcon: ({ color }) => (
-            <IconSymbol size={23} name="cross.case.fill" color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="patients"
-        options={{
-          title: "المرضى",
-          tabBarIcon: ({ color }) => (
-            <IconSymbol size={23} name="person.3.fill" color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="records"
-        options={{
-          title: "السجلات",
-          tabBarIcon: ({ color }) => (
-            <IconSymbol size={23} name="list.bullet" color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="settings"
-        options={{
-          title: "الإعدادات",
-          tabBarIcon: ({ color }) => (
-            <IconSymbol size={23} name="gearshape.fill" color={color} />
-          ),
-        }}
-      />
+      <Tabs.Screen name="index" options={{ title: "الرئيسية", tabBarIcon: ({ color }) => <IconSymbol size={22} name="house.fill" color={color} /> }} />
+      <Tabs.Screen name="medications" options={{ title: "الأدوية", tabBarIcon: ({ color }) => <IconSymbol size={22} name="pills.fill" color={color} /> }} />
+      <Tabs.Screen name="health" options={{ title: "الصحة", tabBarIcon: ({ color }) => <IconSymbol size={22} name="heart.text.square.fill" color={color} /> }} />
+      <Tabs.Screen name="appointments" options={{ title: "المواعيد", tabBarIcon: ({ color }) => <IconSymbol size={22} name="calendar" color={color} /> }} />
+      <Tabs.Screen name="more" options={{ title: "المزيد", tabBarIcon: ({ color }) => <IconSymbol size={22} name="ellipsis.circle.fill" color={color} /> }} />
+      <Tabs.Screen name="emergency" options={{ href: null }} />
+      <Tabs.Screen name="patients" options={{ href: null }} />
+      <Tabs.Screen name="records" options={{ href: null }} />
+      <Tabs.Screen name="settings" options={{ href: null }} />
     </Tabs>
   );
 }

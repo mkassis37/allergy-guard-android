@@ -18,6 +18,10 @@ type IconSymbolName = keyof typeof MAPPING;
  */
 const MAPPING = {
   "house.fill": "home",
+  "pills.fill": "medication",
+  "heart.text.square.fill": "monitor-heart",
+  "calendar": "calendar-month",
+  "ellipsis.circle.fill": "more-horiz",
   "list.bullet": "list",
   "cross.case.fill": "medical-services",
   "gearshape.fill": "settings",

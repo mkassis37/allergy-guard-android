@@ -19,12 +19,15 @@ function validateSnapshot(value: unknown): AllergySnapshot {
   if (!value || typeof value !== "object") {
     throw new Error("ملف النسخة الاحتياطية غير صالح.");
   }
-  const source = value as Partial<AllergySnapshot>;
+  const source = value as { schemaVersion?: unknown; patients?: unknown; activePatientId?: unknown };
   if (!Array.isArray(source.patients)) {
     throw new Error("النسخة الاحتياطية لا تحتوي على قائمة مرضى صالحة.");
   }
+  if (source.schemaVersion !== 2 && source.schemaVersion !== 3) {
+    throw new Error("إصدار بيانات النسخة غير مدعوم.");
+  }
   return {
-    schemaVersion: 2,
+    schemaVersion: 3,
     patients: source.patients,
     activePatientId:
       typeof source.activePatientId === "string"

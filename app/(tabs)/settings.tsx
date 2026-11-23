@@ -435,6 +435,17 @@ export default function SettingsScreen() {
           </Pressable>
         </View>
 
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>عن التطبيق</Text>
+          <Text style={styles.cardText}>
+            فكرة وإعداد ميناس، بمساعدة ChatGPT.
+          </Text>
+          <Text style={styles.helper}>
+            أداة لتنظيم المعلومات الصحية والعائلية، وليست بديلًا عن الطبيب أو
+            عن التعليمات الطبية المعتمدة.
+          </Text>
+        </View>
+
         <View style={styles.note}>
           <Text style={styles.noteText}>
             النسخ الاحتياطي يحفظ بيانات التطبيق على شكل ملف محلي. لا يرفع

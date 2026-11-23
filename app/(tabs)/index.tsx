@@ -81,8 +81,8 @@ export default function HomeScreen() {
   const allergies = records.filter((r) =>
     ["medicine-allergy", "food-allergy", "other-allergy"].includes(r.kind),
   ).length;
-  const medicines = records.filter((r) => r.kind === "medicine").length;
-  const chronic = records.filter((r) => r.kind === "chronic-condition").length;
+  const medicines = (activePatient?.medications.length ?? 0) + records.filter((r) => r.kind === "medicine").length;
+  const chronic = (activePatient?.conditions.length ?? 0) + records.filter((r) => r.kind === "chronic-condition").length;
   const severeAllergies = records.filter(
     (r) =>
       ["medicine-allergy", "food-allergy", "other-allergy"].includes(r.kind) &&
@@ -248,6 +248,22 @@ export default function HomeScreen() {
             icon="✓"
             onPress={() => router.push("/(tabs)/settings" as any)}
           />
+          <QuickTile
+            title="متابعة الصحة"
+            description="الحالات والقياسات والفحوصات"
+            color={C.blue}
+            background={C.blueSoft}
+            icon="♥"
+            onPress={() => router.push("/(tabs)/health" as any)}
+          />
+          <QuickTile
+            title="المواعيد الطبية"
+            description="زيارات الأطباء والفحوصات"
+            color={C.green}
+            background={C.greenSoft}
+            icon="▦"
+            onPress={() => router.push("/(tabs)/appointments" as any)}
+          />
         </View>
 
         <View style={styles.privacy}>
@@ -260,6 +276,10 @@ export default function HomeScreen() {
             </Text>
           </View>
         </View>
+
+        <Text style={styles.attribution}>
+          فكرة وإعداد ميناس، بمساعدة ChatGPT.
+        </Text>
       </ScrollView>
     </ScreenContainer>
   );
@@ -505,6 +525,13 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     textAlign: "right",
     marginTop: 3,
+  },
+  attribution: {
+    color: C.muted,
+    fontSize: 11,
+    textAlign: "center",
+    marginTop: 14,
+    marginBottom: 6,
   },
   pressed: { opacity: 0.78, transform: [{ scale: 0.99 }] },
 });
