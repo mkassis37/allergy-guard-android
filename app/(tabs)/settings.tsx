@@ -30,16 +30,17 @@ import {
   setGovernmentEmergencyNumber,
 } from "@/lib/emergency-settings";
 
+import { AppDesign } from "@/constants/app-design";
 const palette = {
-  navy: "#173B6C",
-  teal: "#2C6EBD",
-  tealSoft: "#EEF5FF",
-  card: "#FFFFFF",
-  line: "#E1E7F0",
-  muted: "#46566B",
-  bg: "#F6F8FC",
-  blue: "#2C6EBD",
-  blueSoft: "#EEF5FF",
+  navy: AppDesign.colors.navy,
+  teal: AppDesign.colors.primary,
+  tealSoft: AppDesign.colors.primarySoft,
+  card: AppDesign.colors.surface,
+  line: AppDesign.colors.border,
+  muted: AppDesign.colors.muted,
+  bg: AppDesign.colors.background,
+  blue: AppDesign.colors.primary,
+  blueSoft: AppDesign.colors.primarySoft,
 };
 
 function formatDate(value: string) {
@@ -307,7 +308,7 @@ export default function SettingsScreen() {
                 keyboardType="phone-pad"
                 textAlign="right"
                 placeholder="911"
-                placeholderTextColor="#98A7B1"
+                placeholderTextColor="#596A7E"
                 style={styles.numberInput}
               />
               <View style={styles.numberModalActions}>
@@ -353,7 +354,7 @@ export default function SettingsScreen() {
                 value={backupPassword}
                 onChangeText={setBackupPassword}
                 placeholder="كلمة مرور النسخة (8 أحرف على الأقل)"
-                placeholderTextColor="#8795A8"
+                placeholderTextColor="#596A7E"
                 secureTextEntry
                 autoCapitalize="none"
                 autoCorrect={false}
@@ -521,7 +522,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   jsonCreateButton: {
-    backgroundColor: "#DDF7F4",
+    backgroundColor: "#E9FAFB",
     borderColor: palette.teal,
     borderRadius: 14,
     borderWidth: 1,
@@ -550,7 +551,7 @@ const styles = StyleSheet.create({
   buttonContent: { flexDirection: "row", alignItems: "center", gap: 10 },
   secondaryButton: {
     backgroundColor: palette.tealSoft,
-    borderColor: "#BBDDE0",
+    borderColor: "#B9DCE1",
     borderRadius: 13,
     borderWidth: 1,
     minHeight: 50,
@@ -581,7 +582,7 @@ const styles = StyleSheet.create({
   statusBadge: {
     alignSelf: "flex-end",
     backgroundColor: palette.tealSoft,
-    borderColor: "#BBDDE0",
+    borderColor: "#B9DCE1",
     borderRadius: 10,
     borderWidth: 1,
     marginTop: 12,
