@@ -9,7 +9,16 @@ import { buildPatientTimeline } from "@/lib/health-records";
 import { buildPatientHealthReportHtml } from "@/lib/health-report";
 
 type EntryMode = "condition" | "measurement" | "lab";
-const C = { navy: "#173B6C", teal: "#087E8B", muted: "#46566B", bg: "#F5F8FC", card: "#FFF", line: "#E1E7F0", soft: "#EAF5F6" };
+import { AppDesign } from "@/constants/app-design";
+const C = {
+  navy: AppDesign.colors.navy,
+  teal: AppDesign.colors.teal,
+  muted: AppDesign.colors.muted,
+  bg: AppDesign.colors.background,
+  card: AppDesign.colors.surface,
+  line: AppDesign.colors.border,
+  soft: AppDesign.colors.tealSoft,
+};
 const id = (prefix: string) => `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
 export default function HealthScreen() {
@@ -149,8 +158,8 @@ export default function HealthScreen() {
 
 const styles = StyleSheet.create({
   content:{paddingTop:20,paddingBottom:30}, kicker:{color:C.teal,fontSize:13,fontWeight:"800",textAlign:"right"}, title:{color:C.navy,fontSize:29,fontWeight:"900",textAlign:"right"}, subtitle:{color:C.muted,fontSize:13,textAlign:"right",marginTop:4,marginBottom:15},
-  rowActions:{flexDirection:"row-reverse",gap:18,marginTop:8}, action:{color:C.teal,fontSize:12,fontWeight:"900"}, delete:{color:"#C0394B",fontSize:12,fontWeight:"900"},
-  chartRow:{flexDirection:"row-reverse",alignItems:"flex-end",justifyContent:"space-around",minHeight:140,marginTop:10}, chartColumn:{flex:1,alignItems:"center",justifyContent:"flex-end",gap:5}, chartValue:{fontSize:10,color:C.navy,fontWeight:"800"}, chartTrack:{height:90,width:16,backgroundColor:"#E8EEF4",borderRadius:8,justifyContent:"flex-end",overflow:"hidden"}, chartBar:{width:16,backgroundColor:C.teal,borderRadius:8}, chartDate:{fontSize:8,color:C.muted}, reportButton:{minHeight:48,backgroundColor:C.navy,borderRadius:13,alignItems:"center",justifyContent:"center",marginBottom:14},reportButtonText:{color:"#FFF",fontWeight:"900",fontSize:13},
-  section:{backgroundColor:C.card,borderWidth:1,borderColor:C.line,borderRadius:18,padding:14,marginBottom:12}, sectionHead:{flexDirection:"row-reverse",justifyContent:"space-between",alignItems:"center",marginBottom:9}, sectionTitle:{color:C.navy,fontSize:16,fontWeight:"900"}, add:{color:C.teal,fontSize:13,fontWeight:"900"}, item:{borderTopWidth:1,borderTopColor:C.line,paddingVertical:10}, itemTitle:{color:C.navy,fontSize:14,fontWeight:"800",textAlign:"right"}, itemSub:{color:C.muted,fontSize:11,textAlign:"right",marginTop:4}, empty:{color:C.muted,fontSize:12,textAlign:"right",paddingVertical:9,lineHeight:18}, notice:{backgroundColor:C.soft,padding:13,borderRadius:14}, noticeText:{color:C.teal,fontSize:11,lineHeight:18,textAlign:"right"},
+  rowActions:{flexDirection:"row-reverse",gap:18,marginTop:8}, action:{color:C.teal,fontSize:12,fontWeight:"900"}, delete:{color:"#B4233A",fontSize:12,fontWeight:"900"},
+  chartRow:{flexDirection:"row-reverse",alignItems:"flex-end",justifyContent:"space-around",minHeight:140,marginTop:10}, chartColumn:{flex:1,alignItems:"center",justifyContent:"flex-end",gap:5}, chartValue:{fontSize: 12,color:C.navy,fontWeight:"800"}, chartTrack:{height:90,width:16,backgroundColor:"#E8EEF4",borderRadius:8,justifyContent:"flex-end",overflow:"hidden"}, chartBar:{width:16,backgroundColor:C.teal,borderRadius:8}, chartDate:{fontSize: 12,color:C.muted}, reportButton:{minHeight:48,backgroundColor:C.navy,borderRadius:13,alignItems:"center",justifyContent:"center",marginBottom:14},reportButtonText:{color:"#FFF",fontWeight:"900",fontSize:13},
+  section:{backgroundColor:C.card,borderWidth:1,borderColor:C.line,borderRadius:18,padding:14,marginBottom:12}, sectionHead:{flexDirection:"row-reverse",justifyContent:"space-between",alignItems:"center",marginBottom:9}, sectionTitle:{color:C.navy,fontSize:16,fontWeight:"900"}, add:{color:C.teal,fontSize:13,fontWeight:"900"}, item:{borderTopWidth:1,borderTopColor:C.line,paddingVertical:10}, itemTitle:{color:C.navy,fontSize:14,fontWeight:"800",textAlign:"right"}, itemSub:{color:C.muted,fontSize: 12,textAlign:"right",marginTop:4}, empty:{color:C.muted,fontSize:12,textAlign:"right",paddingVertical:9,lineHeight:18}, notice:{backgroundColor:C.soft,padding:13,borderRadius:14}, noticeText:{color:C.teal,fontSize: 12,lineHeight:18,textAlign:"right"},
   modalRoot:{flex:1,justifyContent:"flex-end"},backdrop:{...StyleSheet.absoluteFillObject,backgroundColor:"rgba(10,25,45,0.45)"},sheet:{backgroundColor:C.bg,borderTopLeftRadius:23,borderTopRightRadius:23,padding:18,gap:9},modalTitle:{color:C.navy,fontSize:20,fontWeight:"900",textAlign:"right"},input:{minHeight:47,backgroundColor:C.card,borderColor:C.line,borderWidth:1,borderRadius:11,paddingHorizontal:12,color:C.navy,fontSize:13},actions:{flexDirection:"row-reverse",gap:8,marginTop:5},cancel:{flex:1,minHeight:46,borderRadius:11,borderWidth:1,borderColor:C.line,alignItems:"center",justifyContent:"center"},cancelText:{color:C.muted,fontWeight:"800"},save:{flex:1,minHeight:46,borderRadius:11,backgroundColor:C.navy,alignItems:"center",justifyContent:"center"},saveText:{color:"#FFF",fontWeight:"900"}
 });
