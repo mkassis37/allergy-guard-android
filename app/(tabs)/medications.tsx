@@ -14,15 +14,16 @@ import { useAllergy } from "@/lib/allergy-store";
 import type { Medication, MedicationSchedule } from "@/lib/health-types";
 import { requestHealthNotificationPermission } from "@/lib/notification-service";
 
+import { AppDesign } from "@/constants/app-design";
 const C = {
-  navy: "#173B6C",
-  teal: "#087E8B",
-  muted: "#46566B",
-  bg: "#F5F8FC",
-  card: "#FFFFFF",
-  line: "#E1E7F0",
-  soft: "#EAF5F6",
-  amber: "#FFF5E7",
+  navy: AppDesign.colors.navy,
+  teal: AppDesign.colors.teal,
+  muted: AppDesign.colors.muted,
+  bg: AppDesign.colors.background,
+  card: AppDesign.colors.surface,
+  line: AppDesign.colors.border,
+  soft: AppDesign.colors.tealSoft,
+  amber: AppDesign.colors.warningSoft,
 };
 
 function newId(prefix: string) {
@@ -277,12 +278,12 @@ const styles = StyleSheet.create({
   status: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10 },
   statusActive: { backgroundColor: C.soft },
   statusPaused: { backgroundColor: C.amber },
-  statusText: { color: C.navy, fontSize: 11, fontWeight: "800" },
+  statusText: { color: C.navy, fontSize: 12, fontWeight: "800" },
   detail: { color: C.muted, fontSize: 12, textAlign: "right", lineHeight: 19, marginTop: 5 },
   schedule: { color: C.teal, fontSize: 12, textAlign: "right", marginTop: 7, fontWeight: "700", flex: 1 },
   scheduleRow: { flexDirection: "row-reverse", alignItems: "center", gap: 8, marginTop: 5 },
   reminderButton: { backgroundColor: C.soft, borderRadius: 9, paddingHorizontal: 9, paddingVertical: 7 },
-  reminderButtonText: { color: C.teal, fontSize: 10, fontWeight: "900" },
+  reminderButtonText: { color: C.teal, fontSize: 12, fontWeight: "900" },
   actions: { flexDirection: "row-reverse", gap: 8, marginTop: 13 },
   secondaryAction: { flex: 1, minHeight: 42, borderRadius: 11, backgroundColor: C.navy, alignItems: "center", justifyContent: "center" },
   secondaryActionText: { color: "#FFF", fontSize: 12, fontWeight: "800" },
@@ -290,13 +291,13 @@ const styles = StyleSheet.create({
   tertiaryActionText: { color: C.teal, fontSize: 12, fontWeight: "800" },
   notice: { backgroundColor: C.amber, borderRadius: 15, padding: 13, marginTop: 4 },
   noticeTitle: { color: C.navy, fontSize: 13, fontWeight: "900", textAlign: "right" },
-  noticeText: { color: C.muted, fontSize: 11, lineHeight: 18, textAlign: "right", marginTop: 5 },
+  noticeText: { color: C.muted, fontSize: 12, lineHeight: 18, textAlign: "right", marginTop: 5 },
   modalRoot: { flex: 1, justifyContent: "flex-end" },
   backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(10,25,45,0.45)" },
   sheet: { backgroundColor: C.bg, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 18, gap: 9 },
   sheetTitle: { color: C.navy, fontSize: 21, fontWeight: "900", textAlign: "right", marginBottom: 4 },
   input: { minHeight: 48, backgroundColor: C.card, borderColor: C.line, borderWidth: 1, borderRadius: 12, paddingHorizontal: 13, color: C.navy, fontSize: 13 },
-  helper: { color: C.muted, fontSize: 11, lineHeight: 17, textAlign: "right" },
+  helper: { color: C.muted, fontSize: 12, lineHeight: 17, textAlign: "right" },
   modalActions: { flexDirection: "row-reverse", gap: 9, marginTop: 6 },
   cancelButton: { flex: 1, minHeight: 48, borderRadius: 12, borderWidth: 1, borderColor: C.line, justifyContent: "center", alignItems: "center" },
   cancelText: { color: C.muted, fontWeight: "800" },
