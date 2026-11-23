@@ -6,18 +6,18 @@ import { useAllergy } from "@/lib/allergy-store";
 const C = {
   navy: "#173B6C",
   navySoft: "#EAF1FC",
-  blue: "#2C6EBD",
+  blue: "#1559A6",
   blueSoft: "#EEF5FF",
-  coral: "#D95368",
+  coral: "#B4233A",
   coralSoft: "#FFF0F3",
-  cyan: "#0F9FAE",
+  cyan: "#087E8B",
   cyanSoft: "#E9FAFB",
-  green: "#21835B",
+  green: "#176B45",
   greenSoft: "#EAF8F1",
   bg: "#F6F8FC",
   card: "#FFFFFF",
   line: "#E1E7F0",
-  muted: "#66758A",
+  muted: "#46566B",
 };
 
 function Stat({
@@ -440,7 +440,7 @@ const styles = StyleSheet.create({
     textAlign: "right",
     marginBottom: 10,
   },
-  sectionCaption: { color: C.muted, fontSize: 12, fontWeight: "700" },
+  sectionCaption: { color: C.muted, fontSize: 13, fontWeight: "800" },
   statsRow: { flexDirection: "row-reverse", gap: 9, marginBottom: 23 },
   stat: {
     flex: 1,
@@ -460,7 +460,7 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
   statValue: { fontSize: 25, fontWeight: "900" },
-  statLabel: { color: C.muted, fontSize: 12, fontWeight: "800", marginTop: 2 },
+  statLabel: { color: C.muted, fontSize: 13, fontWeight: "900", marginTop: 3 },
   tilesGrid: {
     flexDirection: "row-reverse",
     flexWrap: "wrap",
