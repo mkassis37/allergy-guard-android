@@ -1,8 +1,12 @@
 import { useState } from "react";
-import { Alert, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { Alert, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import * as Print from "expo-print";
+import * as Sharing from "expo-sharing";
 import { ScreenContainer } from "@/components/screen-container";
 import { useAllergy } from "@/lib/allergy-store";
 import type { ChronicCondition, HealthMeasurement, LabResult } from "@/lib/health-types";
+import { buildPatientTimeline } from "@/lib/health-records";
+import { buildPatientHealthReportHtml } from "@/lib/health-report";
 
 type EntryMode = "condition" | "measurement" | "lab";
 const C = { navy: "#173B6C", teal: "#087E8B", muted: "#66758A", bg: "#F5F8FC", card: "#FFF", line: "#E1E7F0", soft: "#EAF5F6" };
@@ -22,6 +26,21 @@ export default function HealthScreen() {
   const conditions = activePatient?.conditions ?? [];
   const measurements = activePatient?.measurements ?? [];
   const labs = activePatient?.labResults ?? [];
+  const timeline = activePatient ? buildPatientTimeline(activePatient).slice(0, 12) : [];
+  const chartType = measurements[0]?.type;
+  const chartUnit = measurements[0]?.unit;
+  const chartSeries = measurements.filter((item) => item.type === chartType && item.unit === chartUnit && typeof item.value === "number").slice(0, 7).reverse();
+  const chartMax = Math.max(1, ...chartSeries.map((item) => Math.abs(Number(item.value))));
+  const exportReport = async () => {
+    if (!activePatient) { Alert.alert("لا يوجد ملف", "اختر ملف المريض أولًا."); return; }
+    try {
+      const html = buildPatientHealthReportHtml(activePatient);
+      if (Platform.OS === "web") { await Print.printAsync({ html }); return; }
+      const file = await Print.printToFileAsync({ html });
+      if (!(await Sharing.isAvailableAsync())) throw new Error("المشاركة غير متاحة على هذا الجهاز.");
+      await Sharing.shareAsync(file.uri, { mimeType: "application/pdf", dialogTitle: "مشاركة التقرير الصحي الشامل" });
+    } catch (error) { Alert.alert("تعذر إنشاء التقرير", error instanceof Error ? error.message : "حدث خطأ غير متوقع."); }
+  };
 
   const open = (next: EntryMode) => {
     setMode(next); setEditingId(null); setName(""); setValue(""); setUnit(""); setRange(""); setNotes(""); setRecordDate(new Date().toISOString().slice(0, 10)); setVisible(true);
@@ -90,6 +109,26 @@ export default function HealthScreen() {
           <View style={styles.sectionHead}><Text style={styles.sectionTitle}>نتائج المختبر</Text><Pressable onPress={() => open("lab")}><Text style={styles.add}>＋ إضافة</Text></Pressable></View>
           {labs.length ? labs.slice(0,30).map(item => <View key={item.id} style={styles.item}><Text style={styles.itemTitle}>{item.testName}: {item.value} {item.unit}</Text><Text style={styles.itemSub}>{new Date(item.resultedAt).toLocaleDateString("ar-JO")}{item.referenceRange ? ` · المجال المرجعي: ${item.referenceRange}` : ""}</Text><View style={styles.rowActions}><Pressable onPress={() => edit("lab", item)}><Text style={styles.action}>تعديل</Text></Pressable><Pressable onPress={() => remove("lab", item.id)}><Text style={styles.delete}>حذف</Text></Pressable></View></View>) : <Text style={styles.empty}>احتفظ بنتائج الفحوصات ومجالاتها المرجعية كما وردت من المختبر.</Text>}
         </View>
+        <View style={styles.section}>
+          <View style={styles.sectionHead}><Text style={styles.sectionTitle}>مؤشر القياسات</Text></View>
+          {chartSeries.length > 0 ? <>
+            <Text style={styles.itemSub}>آخر القياسات من النوع {chartType} ({chartUnit || "دون وحدة"}) — لا تتم مقارنة أنواع أو وحدات مختلفة</Text>
+            <View style={styles.chartRow}>{chartSeries.map((item) => <View key={item.id} style={styles.chartColumn}>
+              <Text style={styles.chartValue}>{String(item.value)}</Text>
+              <View style={styles.chartTrack}><View style={[styles.chartBar, { height: Math.max(5, Math.round(Math.abs(Number(item.value)) / chartMax * 86)) }]} /></View>
+              <Text style={styles.chartDate}>{item.measuredAt.slice(0, 10)}</Text>
+            </View>)}</View>
+          </> : <Text style={styles.empty}>أضف عدة قياسات من النوع والوحدة نفسيهما لعرض تطورها.</Text>}
+        </View>
+        <View style={styles.section}>
+          <View style={styles.sectionHead}><Text style={styles.sectionTitle}>الخط الزمني الطبي</Text></View>
+          {timeline.length ? timeline.map((entry) => <View key={entry.id} style={styles.item}>
+            <Text style={styles.itemTitle}>{entry.title}</Text>
+            <Text style={styles.itemSub}>{entry.date ? new Date(entry.date).toLocaleDateString("ar-JO") : "دون تاريخ"} · {entry.category}</Text>
+            {!!entry.detail && <Text style={styles.itemSub}>{entry.detail}</Text>}
+          </View>) : <Text style={styles.empty}>ستظهر هنا الأحداث الطبية من السجلات القديمة والجديدة.</Text>}
+        </View>
+        <Pressable onPress={exportReport} style={styles.reportButton}><Text style={styles.reportButtonText}>إنشاء التقرير الصحي الشامل PDF</Text></Pressable>
         <View style={styles.notice}><Text style={styles.noticeText}>يعرض التطبيق القيم كما أدخلتها فقط. لا يفسر النتائج ولا يشخّص الأمراض، ويجب مراجعة الطبيب عند تفسيرها.</Text></View>
       </ScrollView>
       <Modal visible={visible} transparent animationType="slide" onRequestClose={() => setVisible(false)}>
@@ -111,6 +150,7 @@ export default function HealthScreen() {
 const styles = StyleSheet.create({
   content:{paddingTop:20,paddingBottom:30}, kicker:{color:C.teal,fontSize:13,fontWeight:"800",textAlign:"right"}, title:{color:C.navy,fontSize:29,fontWeight:"900",textAlign:"right"}, subtitle:{color:C.muted,fontSize:13,textAlign:"right",marginTop:4,marginBottom:15},
   rowActions:{flexDirection:"row-reverse",gap:18,marginTop:8}, action:{color:C.teal,fontSize:12,fontWeight:"900"}, delete:{color:"#C0394B",fontSize:12,fontWeight:"900"},
+  chartRow:{flexDirection:"row-reverse",alignItems:"flex-end",justifyContent:"space-around",minHeight:140,marginTop:10}, chartColumn:{flex:1,alignItems:"center",justifyContent:"flex-end",gap:5}, chartValue:{fontSize:10,color:C.navy,fontWeight:"800"}, chartTrack:{height:90,width:16,backgroundColor:"#E8EEF4",borderRadius:8,justifyContent:"flex-end",overflow:"hidden"}, chartBar:{width:16,backgroundColor:C.teal,borderRadius:8}, chartDate:{fontSize:8,color:C.muted}, reportButton:{minHeight:48,backgroundColor:C.navy,borderRadius:13,alignItems:"center",justifyContent:"center",marginBottom:14},reportButtonText:{color:"#FFF",fontWeight:"900",fontSize:13},
   section:{backgroundColor:C.card,borderWidth:1,borderColor:C.line,borderRadius:18,padding:14,marginBottom:12}, sectionHead:{flexDirection:"row-reverse",justifyContent:"space-between",alignItems:"center",marginBottom:9}, sectionTitle:{color:C.navy,fontSize:16,fontWeight:"900"}, add:{color:C.teal,fontSize:13,fontWeight:"900"}, item:{borderTopWidth:1,borderTopColor:C.line,paddingVertical:10}, itemTitle:{color:C.navy,fontSize:14,fontWeight:"800",textAlign:"right"}, itemSub:{color:C.muted,fontSize:11,textAlign:"right",marginTop:4}, empty:{color:C.muted,fontSize:12,textAlign:"right",paddingVertical:9,lineHeight:18}, notice:{backgroundColor:C.soft,padding:13,borderRadius:14}, noticeText:{color:C.teal,fontSize:11,lineHeight:18,textAlign:"right"},
   modalRoot:{flex:1,justifyContent:"flex-end"},backdrop:{...StyleSheet.absoluteFillObject,backgroundColor:"rgba(10,25,45,0.45)"},sheet:{backgroundColor:C.bg,borderTopLeftRadius:23,borderTopRightRadius:23,padding:18,gap:9},modalTitle:{color:C.navy,fontSize:20,fontWeight:"900",textAlign:"right"},input:{minHeight:47,backgroundColor:C.card,borderColor:C.line,borderWidth:1,borderRadius:11,paddingHorizontal:12,color:C.navy,fontSize:13},actions:{flexDirection:"row-reverse",gap:8,marginTop:5},cancel:{flex:1,minHeight:46,borderRadius:11,borderWidth:1,borderColor:C.line,alignItems:"center",justifyContent:"center"},cancelText:{color:C.muted,fontWeight:"800"},save:{flex:1,minHeight:46,borderRadius:11,backgroundColor:C.navy,alignItems:"center",justifyContent:"center"},saveText:{color:"#FFF",fontWeight:"900"}
 });
