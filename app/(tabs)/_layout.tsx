@@ -17,14 +17,14 @@ export default function TabLayout() {
         tabBarActiveTintColor: colors.tint,
         tabBarInactiveTintColor: colors.muted,
         tabBarButton: HapticTab,
-        tabBarLabelStyle: { fontSize: 10, fontWeight: "800" },
+        tabBarLabelStyle: { fontSize: 12, fontWeight: "900", marginTop: 2 },
         tabBarStyle: {
-          paddingTop: 7,
+          paddingTop: 8,
           paddingBottom: bottomPadding,
-          height: 58 + bottomPadding,
+          height: 66 + bottomPadding,
           backgroundColor: "#FFFFFF",
-          borderTopColor: "#E1E7F0",
-          borderTopWidth: 1,
+          borderTopColor: "#D5DFEA",
+          borderTopWidth: 1,\n          elevation: 10,
         },
       }}
     >
