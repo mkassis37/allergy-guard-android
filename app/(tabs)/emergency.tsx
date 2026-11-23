@@ -27,7 +27,7 @@ const palette = {
   bg: "#F6F8FC",
   card: "#FFFFFF",
   line: "#E1E7F0",
-  muted: "#66758A",
+  muted: "#46566B",
   red: "#D95368",
   paleRed: "#FFF0F3",
 };
@@ -340,7 +340,7 @@ export default function EmergencyScreen() {
                   setDraft({ ...draft, fullName: value })
                 }
                 placeholder="الاسم الكامل"
-                placeholderTextColor="#9BAAB3"
+                placeholderTextColor="#596A7E"
                 style={styles.input}
                 textAlign="right"
               />
@@ -348,7 +348,7 @@ export default function EmergencyScreen() {
                 value={draft.phone}
                 onChangeText={(value) => setDraft({ ...draft, phone: value })}
                 placeholder="رقم الهاتف"
-                placeholderTextColor="#9BAAB3"
+                placeholderTextColor="#596A7E"
                 style={styles.input}
                 textAlign="right"
                 keyboardType="phone-pad"
@@ -359,7 +359,7 @@ export default function EmergencyScreen() {
                   setDraft({ ...draft, emergencyContact: value })
                 }
                 placeholder="جهة اتصال للطوارئ + الهاتف"
-                placeholderTextColor="#9BAAB3"
+                placeholderTextColor="#596A7E"
                 style={styles.input}
                 textAlign="right"
               />
@@ -367,7 +367,7 @@ export default function EmergencyScreen() {
                 value={draft.doctor}
                 onChangeText={(value) => setDraft({ ...draft, doctor: value })}
                 placeholder="اسم الطبيب / المنشأة"
-                placeholderTextColor="#9BAAB3"
+                placeholderTextColor="#596A7E"
                 style={styles.input}
                 textAlign="right"
               />
