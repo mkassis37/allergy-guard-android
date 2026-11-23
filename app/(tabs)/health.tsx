@@ -9,7 +9,7 @@ import { buildPatientTimeline } from "@/lib/health-records";
 import { buildPatientHealthReportHtml } from "@/lib/health-report";
 
 type EntryMode = "condition" | "measurement" | "lab";
-const C = { navy: "#173B6C", teal: "#087E8B", muted: "#66758A", bg: "#F5F8FC", card: "#FFF", line: "#E1E7F0", soft: "#EAF5F6" };
+const C = { navy: "#173B6C", teal: "#087E8B", muted: "#46566B", bg: "#F5F8FC", card: "#FFF", line: "#E1E7F0", soft: "#EAF5F6" };
 const id = (prefix: string) => `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
 export default function HealthScreen() {
