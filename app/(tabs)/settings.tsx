@@ -36,7 +36,7 @@ const palette = {
   tealSoft: "#EEF5FF",
   card: "#FFFFFF",
   line: "#E1E7F0",
-  muted: "#66758A",
+  muted: "#46566B",
   bg: "#F6F8FC",
   blue: "#2C6EBD",
   blueSoft: "#EEF5FF",
