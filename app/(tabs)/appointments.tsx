@@ -5,7 +5,7 @@ import { useAllergy } from "@/lib/allergy-store";
 import type { MedicalAppointment } from "@/lib/health-types";
 import { requestHealthNotificationPermission } from "@/lib/notification-service";
 
-const C={navy:"#173B6C",teal:"#087E8B",muted:"#66758A",bg:"#F5F8FC",card:"#FFF",line:"#E1E7F0",soft:"#EAF5F6"};
+const C={navy:"#173B6C",teal:"#087E8B",muted:"#46566B",bg:"#F5F8FC",card:"#FFF",line:"#E1E7F0",soft:"#EAF5F6"};
 const id=()=>`appointment-${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
 
 export default function AppointmentsScreen(){

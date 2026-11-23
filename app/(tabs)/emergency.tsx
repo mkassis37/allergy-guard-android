@@ -19,6 +19,7 @@ import { ScreenContainer } from "@/components/screen-container";
 import { FormActionBar } from "@/components/form-action-bar";
 import { useAllergy } from "@/lib/allergy-store";
 import { getGovernmentEmergencyNumber } from "@/lib/emergency-settings";
+import { buildEmergencyHealthSummary } from "@/lib/health-records";
 
 const palette = {
   navy: "#17324D",
@@ -26,13 +27,14 @@ const palette = {
   bg: "#F6F8FC",
   card: "#FFFFFF",
   line: "#E1E7F0",
-  muted: "#66758A",
+  muted: "#46566B",
   red: "#D95368",
   paleRed: "#FFF0F3",
 };
 
 export default function EmergencyScreen() {
-  const { records, profile, saveProfile } = useAllergy();
+  const { records, profile, saveProfile, activePatient } = useAllergy();
+  const structuredHealth = activePatient ? buildEmergencyHealthSummary(activePatient) : { allergies: [], medications: [], conditions: [] };
   const [editing, setEditing] = useState(false);
   const [doctorMode, setDoctorMode] = useState(false);
   const [previewVisible, setPreviewVisible] = useState(false);
@@ -67,6 +69,8 @@ export default function EmergencyScreen() {
       `الحساسيات الشديدة: ${severeAllergies.map((r) => `${r.name}${r.activeIngredient ? ` (${r.activeIngredient})` : ""}`).join("، ") || "لا توجد حساسية شديدة مسجلة"}`,
       `الحساسيات الدوائية: ${medicineAllergies.map((r) => `${r.name}${r.activeIngredient ? ` (${r.activeIngredient})` : ""}${r.severity ? ` — الشدة: ${r.severity}` : ""}`).join("، ") || "لا يوجد"}`,
       `الأدوية الحالية: ${medicines.map((r) => `${r.name}${r.activeIngredient ? ` (${r.activeIngredient})` : ""}${r.dosage ? ` — ${r.dosage}` : ""}${r.frequency ? `، ${r.frequency}` : ""}`).join("، ") || "لا يوجد"}`,
+      `الحالات الصحية النشطة: ${structuredHealth.conditions.join("، ") || "لا توجد حالات مسجلة"}`,
+      `الأدوية من سجل الصحة: ${structuredHealth.medications.map((m) => `${m.name}${m.dose ? ` — ${m.dose}` : ""}`).join("، ") || "لا يوجد"}` ,
     ];
     if (!doctorMode) {
       lines.push(
@@ -218,6 +222,18 @@ export default function EmergencyScreen() {
                         </Text>
             </>
           ) : null}
+          {structuredHealth.medications.length > 0 ? (
+            <>
+              <Text style={styles.fieldHeading}>الأدوية الحالية من سجل الصحة</Text>
+              <Text style={styles.foodText}>{structuredHealth.medications.map((item) => item.name + (item.dose ? " — " + item.dose : "")).join("، ")}</Text>
+            </>
+          ) : null}
+          {structuredHealth.conditions.length > 0 ? (
+            <>
+              <Text style={styles.fieldHeading}>الحالات الصحية النشطة</Text>
+              <Text style={styles.foodText}>{structuredHealth.conditions.join("، ")}</Text>
+            </>
+          ) : null}
           <Text style={styles.fieldHeading}>الأدوية / العلاجات المسجلة</Text>
           <Text style={styles.foodText}>
             {medicines
@@ -324,7 +340,7 @@ export default function EmergencyScreen() {
                   setDraft({ ...draft, fullName: value })
                 }
                 placeholder="الاسم الكامل"
-                placeholderTextColor="#9BAAB3"
+                placeholderTextColor="#596A7E"
                 style={styles.input}
                 textAlign="right"
               />
@@ -332,7 +348,7 @@ export default function EmergencyScreen() {
                 value={draft.phone}
                 onChangeText={(value) => setDraft({ ...draft, phone: value })}
                 placeholder="رقم الهاتف"
-                placeholderTextColor="#9BAAB3"
+                placeholderTextColor="#596A7E"
                 style={styles.input}
                 textAlign="right"
                 keyboardType="phone-pad"
@@ -343,7 +359,7 @@ export default function EmergencyScreen() {
                   setDraft({ ...draft, emergencyContact: value })
                 }
                 placeholder="جهة اتصال للطوارئ + الهاتف"
-                placeholderTextColor="#9BAAB3"
+                placeholderTextColor="#596A7E"
                 style={styles.input}
                 textAlign="right"
               />
@@ -351,7 +367,7 @@ export default function EmergencyScreen() {
                 value={draft.doctor}
                 onChangeText={(value) => setDraft({ ...draft, doctor: value })}
                 placeholder="اسم الطبيب / المنشأة"
-                placeholderTextColor="#9BAAB3"
+                placeholderTextColor="#596A7E"
                 style={styles.input}
                 textAlign="right"
               />
