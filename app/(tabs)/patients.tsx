@@ -24,17 +24,18 @@ import {
   type Profile,
 } from "@/lib/allergy-store";
 
+import { AppDesign } from "@/constants/app-design";
 const C = {
-  navy: "#173B6C",
-  teal: "#2C6EBD",
-  tealSoft: "#EEF5FF",
-  bg: "#F6F8FC",
-  card: "#FFFFFF",
-  line: "#E1E7F0",
-  muted: "#46566B",
-  danger: "#D95368",
-  dangerSoft: "#FFF0F3",
-  green: "#21835B",
+  navy: AppDesign.colors.navy,
+  teal: AppDesign.colors.primary,
+  tealSoft: AppDesign.colors.primarySoft,
+  bg: AppDesign.colors.background,
+  card: AppDesign.colors.surface,
+  line: AppDesign.colors.border,
+  muted: AppDesign.colors.muted,
+  danger: AppDesign.colors.danger,
+  dangerSoft: AppDesign.colors.dangerSoft,
+  green: AppDesign.colors.success,
 };
 
 function Input({
@@ -59,7 +60,7 @@ function Input({
         value={value}
         onChangeText={onChange}
         placeholder={placeholder}
-        placeholderTextColor="#98A7B1"
+        placeholderTextColor="#596A7E"
         keyboardType={keyboardType}
         multiline={multiline}
         textAlign="right"
@@ -788,7 +789,7 @@ const styles = StyleSheet.create({
   detailStatValue: { color: C.navy, fontSize: 20, fontWeight: "900" },
   detailStatLabel: {
     color: C.muted,
-    fontSize: 10,
+    fontSize: 12,
     fontWeight: "800",
     marginTop: 2,
   },
@@ -819,7 +820,7 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   detailRecordName: { color: C.navy, fontSize: 13, fontWeight: "900" },
-  detailRecordKind: { color: C.teal, fontSize: 11, fontWeight: "800" },
+  detailRecordKind: { color: C.teal, fontSize: 12, fontWeight: "800" },
   detailManage: {
     backgroundColor: C.teal,
     borderRadius: 13,
@@ -901,7 +902,7 @@ const styles = StyleSheet.create({
   },
   activeChip: {
     color: C.green,
-    backgroundColor: "#EAF7F1",
+    backgroundColor: "#EAF8F1",
     borderRadius: 999,
     paddingHorizontal: 9,
     paddingVertical: 4,
@@ -943,7 +944,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingHorizontal: 7,
     paddingVertical: 5,
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: "800",
   },
   moreButton: {
@@ -1041,7 +1042,7 @@ const styles = StyleSheet.create({
     minWidth: 92,
     minHeight: 48,
     borderRadius: 14,
-    backgroundColor: "#DDF7F4",
+    backgroundColor: "#E9FAFB",
     borderWidth: 3,
     borderColor: C.teal,
     alignItems: "center",
