@@ -43,7 +43,7 @@ const C = {
   bg: "#F6F8FC",
   card: "#FFFFFF",
   line: "#E1E7F0",
-  muted: "#66758A",
+  muted: "#46566B",
   red: "#D95368",
   redSoft: "#FFF0F3",
   green: "#21835B",
