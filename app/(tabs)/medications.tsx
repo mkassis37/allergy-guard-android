@@ -17,7 +17,7 @@ import { requestHealthNotificationPermission } from "@/lib/notification-service"
 const C = {
   navy: "#173B6C",
   teal: "#087E8B",
-  muted: "#66758A",
+  muted: "#46566B",
   bg: "#F5F8FC",
   card: "#FFFFFF",
   line: "#E1E7F0",
