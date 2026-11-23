@@ -48,7 +48,7 @@ export default function HealthScreen() {
   const save = () => {
     if (!name.trim()) { Alert.alert("الاسم مطلوب", "أدخل اسم الحالة أو القياس أو الفحص."); return; }
     const now = new Date().toISOString();
-    const selectedDate = /^\\d{4}-\\d{2}-\\d{2}$/.test(recordDate) ? new Date(recordDate + "T12:00:00").toISOString() : now;
+    const selectedDate = /^\d{4}-\d{2}-\d{2}$/.test(recordDate) ? new Date(recordDate + "T12:00:00").toISOString() : now;
     if (mode === "condition") {
       const previous = conditions.find((item) => item.id === editingId);
       const item: ChronicCondition = { id: editingId || id("condition"), name: name.trim(), status: previous?.status || "active", diagnosedAt: selectedDate, linkedMedicationIds: previous?.linkedMedicationIds || [], clinician: previous?.clinician, notes: notes.trim(), createdAt: previous?.createdAt || now, updatedAt: now };
