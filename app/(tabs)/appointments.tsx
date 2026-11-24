@@ -32,7 +32,7 @@ export default function AppointmentsScreen(){
  const add=async()=>{
   if(saving)return;
   if(!title.trim()||!appointmentDate||!appointmentTime.trim()){Alert.alert("بيانات ناقصة","أدخل اسم الموعد والتاريخ والساعة.");return;}
-  if(!/^([01]\\d|2[0-3]):[0-5]\\d$/.test(appointmentTime.trim())){Alert.alert("صيغة الوقت غير صحيحة","اكتب الوقت بصيغة 24 ساعة مثل 09:30.");return;}
+  if(!/^([01]\d|2[0-3]):[0-5]\d$/.test(appointmentTime.trim())){Alert.alert("صيغة الوقت غير صحيحة","اكتب الوقت بصيغة 24 ساعة مثل 09:30.");return;}
   const [year,month,day]=appointmentDate.split("-").map(Number);
   const [hour,minute]=appointmentTime.trim().split(":").map(Number);
   const date=new Date(year,month-1,day,hour,minute,0,0);
