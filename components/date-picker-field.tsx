@@ -233,7 +233,7 @@ export function DatePickerField({
         <Text style={styles.triggerHint}>اختيار من التقويم</Text>
         <View style={styles.dateValueWrap}>
           <Text style={[styles.dateValue, !value && styles.placeholder]}>
-            {value || placeholder}
+            {formatArabicDate(value) || placeholder}
           </Text>
           <View style={styles.miniCalendarIcon}>
             <View style={styles.miniCalendarInner} />

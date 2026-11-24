@@ -21,15 +21,16 @@ import { useAllergy } from "@/lib/allergy-store";
 import { getGovernmentEmergencyNumber } from "@/lib/emergency-settings";
 import { buildEmergencyHealthSummary } from "@/lib/health-records";
 
+import { AppDesign } from "@/constants/app-design";
 const palette = {
-  navy: "#17324D",
-  teal: "#2C6EBD",
-  bg: "#F6F8FC",
-  card: "#FFFFFF",
-  line: "#E1E7F0",
-  muted: "#46566B",
-  red: "#D95368",
-  paleRed: "#FFF0F3",
+  navy: AppDesign.colors.navy,
+  teal: AppDesign.colors.primary,
+  bg: AppDesign.colors.background,
+  card: AppDesign.colors.surface,
+  line: AppDesign.colors.border,
+  muted: AppDesign.colors.muted,
+  red: AppDesign.colors.danger,
+  paleRed: AppDesign.colors.dangerSoft,
 };
 
 export default function EmergencyScreen() {
@@ -496,7 +497,7 @@ const styles = StyleSheet.create({
   },
   badgeText: {
     color: "white",
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: "800",
     textAlign: "center",
   },
@@ -508,7 +509,7 @@ const styles = StyleSheet.create({
   },
   cardSub: {
     color: palette.muted,
-    fontSize: 10,
+    fontSize: 12,
     textAlign: "right",
     marginTop: 3,
   },
@@ -528,7 +529,7 @@ const styles = StyleSheet.create({
   },
   warningText: {
     color: "#7D4B52",
-    fontSize: 10,
+    fontSize: 12,
     textAlign: "right",
     lineHeight: 16,
     marginTop: 2,
@@ -543,10 +544,10 @@ const styles = StyleSheet.create({
   },
   infoGrid: { flexDirection: "row-reverse", gap: 7 },
   info: { flex: 1, borderRadius: 9, backgroundColor: palette.bg, padding: 9 },
-  infoLabel: { color: palette.muted, fontSize: 9, textAlign: "right" },
+  infoLabel: { color: palette.muted, fontSize: 12, textAlign: "right" },
   infoValue: {
     color: palette.navy,
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: "700",
     textAlign: "right",
     marginTop: 4,
@@ -614,7 +615,7 @@ const styles = StyleSheet.create({
   },
   itemSub: {
     color: palette.muted,
-    fontSize: 10,
+    fontSize: 12,
     textAlign: "right",
     marginTop: 3,
   },
@@ -623,11 +624,11 @@ const styles = StyleSheet.create({
     backgroundColor: palette.bg,
     borderRadius: 9,
     padding: 10,
-    fontSize: 11,
+    fontSize: 12,
     textAlign: "right",
     lineHeight: 18,
   },
-  none: { color: palette.muted, fontSize: 11, textAlign: "right" },
+  none: { color: palette.muted, fontSize: 12, textAlign: "right" },
   actions: { flexDirection: "row-reverse", gap: 8, marginTop: 14 },
   share: {
     flex: 1,
@@ -663,7 +664,7 @@ const styles = StyleSheet.create({
   },
   backupHint: {
     color: palette.muted,
-    fontSize: 10,
+    fontSize: 12,
     textAlign: "right",
     marginTop: 4,
   },
@@ -681,7 +682,7 @@ const styles = StyleSheet.create({
   },
   backupButtonText: {
     color: palette.teal,
-    fontSize: 10,
+    fontSize: 12,
     fontWeight: "800",
   },
   note: {
@@ -692,7 +693,7 @@ const styles = StyleSheet.create({
   },
   noteText: {
     color: palette.teal,
-    fontSize: 10,
+    fontSize: 12,
     textAlign: "right",
     lineHeight: 17,
   },
@@ -731,7 +732,7 @@ const styles = StyleSheet.create({
     minWidth: 88,
     minHeight: 46,
     borderRadius: 13,
-    backgroundColor: "#DDF7F4",
+    backgroundColor: "#E9FAFB",
     borderWidth: 3,
     borderColor: "#087E8B",
     alignItems: "center",
@@ -767,7 +768,7 @@ const styles = StyleSheet.create({
   },
   doctorPanelHint: {
     color: palette.muted,
-    fontSize: 11,
+    fontSize: 12,
     lineHeight: 17,
     textAlign: "right",
     marginTop: 3,
@@ -825,7 +826,7 @@ const styles = StyleSheet.create({
   },
   previewMedicalKicker: {
     color: "#BFD5F2",
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: "800",
     textAlign: "right",
   },
@@ -875,7 +876,7 @@ const styles = StyleSheet.create({
   },
   previewDisclaimer: {
     color: palette.muted,
-    fontSize: 11,
+    fontSize: 12,
     lineHeight: 17,
     textAlign: "right",
     marginTop: 14,
@@ -904,7 +905,7 @@ const styles = StyleSheet.create({
   },
   passwordHint: {
     color: palette.muted,
-    fontSize: 11,
+    fontSize: 12,
     lineHeight: 17,
     textAlign: "right",
     marginBottom: 12,

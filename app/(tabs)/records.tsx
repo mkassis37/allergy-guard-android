@@ -36,26 +36,27 @@ import * as DocumentPicker from "expo-document-picker";
 import * as FileSystem from "expo-file-system/legacy";
 import { decryptForDevice, encryptForDevice } from "@/lib/secure-local-storage";
 
+import { AppDesign } from "@/constants/app-design";
 const C = {
-  navy: "#173B6C",
-  teal: "#2C6EBD",
-  tealSoft: "#EEF5FF",
-  bg: "#F6F8FC",
-  card: "#FFFFFF",
-  line: "#E1E7F0",
-  muted: "#46566B",
-  red: "#D95368",
-  redSoft: "#FFF0F3",
-  green: "#21835B",
-  greenSoft: "#EAF7F1",
-  amber: "#B86A15",
-  amberSoft: "#FFF5E8",
-  blue: "#3569A8",
-  blueSoft: "#EDF4FC",
-  purple: "#6F55A3",
-  purpleSoft: "#F2EEFA",
-  brown: "#7D5A50",
-  brownSoft: "#F7F1EF",
+  navy: AppDesign.colors.navy,
+  teal: AppDesign.colors.primary,
+  tealSoft: AppDesign.colors.primarySoft,
+  bg: AppDesign.colors.background,
+  card: AppDesign.colors.surface,
+  line: AppDesign.colors.border,
+  muted: AppDesign.colors.muted,
+  red: AppDesign.colors.danger,
+  redSoft: AppDesign.colors.dangerSoft,
+  green: AppDesign.colors.success,
+  greenSoft: AppDesign.colors.successSoft,
+  amber: AppDesign.colors.warning,
+  amberSoft: AppDesign.colors.warningSoft,
+  blue: AppDesign.colors.primary,
+  blueSoft: AppDesign.colors.primarySoft,
+  purple: AppDesign.colors.purple,
+  purpleSoft: AppDesign.colors.purpleSoft,
+  brown: AppDesign.colors.brown,
+  brownSoft: AppDesign.colors.brownSoft,
 };
 
 type FilterKey = "all" | "allergies" | RecordKind;
@@ -184,7 +185,7 @@ function Field({
         value={value}
         onChangeText={onChange}
         placeholder={placeholder}
-        placeholderTextColor="#98A7B1"
+        placeholderTextColor="#596A7E"
         style={[styles.input, multiline && styles.multiline]}
         multiline={multiline}
         textAlign="right"
@@ -670,7 +671,7 @@ export default function RecordsScreen() {
                 value={query}
                 onChangeText={setQuery}
                 placeholder="ابحث باسم الدواء أو الحساسية أو المرض..."
-                placeholderTextColor="#98A7B1"
+                placeholderTextColor="#596A7E"
                 textAlign="right"
                 style={styles.search}
               />
@@ -1692,7 +1693,7 @@ const styles = StyleSheet.create({
     minWidth: 92,
     minHeight: 48,
     borderRadius: 14,
-    backgroundColor: "#DDF7F4",
+    backgroundColor: "#E9FAFB",
     borderWidth: 3,
     borderColor: C.teal,
     alignItems: "center",

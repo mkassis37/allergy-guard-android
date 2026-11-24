@@ -3,21 +3,22 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { ScreenContainer } from "@/components/screen-container";
 import { useAllergy } from "@/lib/allergy-store";
 
+import { AppDesign } from "@/constants/app-design";
 const C = {
-  navy: "#173B6C",
-  navySoft: "#EAF1FC",
-  blue: "#1559A6",
-  blueSoft: "#EEF5FF",
-  coral: "#B4233A",
-  coralSoft: "#FFF0F3",
-  cyan: "#087E8B",
-  cyanSoft: "#E9FAFB",
-  green: "#176B45",
-  greenSoft: "#EAF8F1",
-  bg: "#F6F8FC",
-  card: "#FFFFFF",
-  line: "#E1E7F0",
-  muted: "#46566B",
+  navy: AppDesign.colors.navy,
+  navySoft: AppDesign.colors.navySoft,
+  blue: AppDesign.colors.primary,
+  blueSoft: AppDesign.colors.primarySoft,
+  coral: AppDesign.colors.danger,
+  coralSoft: AppDesign.colors.dangerSoft,
+  cyan: AppDesign.colors.teal,
+  cyanSoft: AppDesign.colors.tealSoft,
+  green: AppDesign.colors.success,
+  greenSoft: AppDesign.colors.successSoft,
+  bg: AppDesign.colors.background,
+  card: AppDesign.colors.surface,
+  line: AppDesign.colors.border,
+  muted: AppDesign.colors.muted,
 };
 
 function Stat({
@@ -403,7 +404,7 @@ const styles = StyleSheet.create({
   },
   emergencyStatLabel: {
     color: C.muted,
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: "800",
     textAlign: "right",
   },
@@ -528,7 +529,7 @@ const styles = StyleSheet.create({
   },
   attribution: {
     color: C.muted,
-    fontSize: 11,
+    fontSize: 12,
     textAlign: "center",
     marginTop: 14,
     marginBottom: 6,
