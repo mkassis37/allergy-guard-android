@@ -4,6 +4,7 @@ import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
 import { ScreenContainer } from "@/components/screen-container";
 import { useAllergy } from "@/lib/allergy-store";
+import { DatePickerField } from "@/components/date-picker-field";
 import type { ChronicCondition, HealthMeasurement, LabResult } from "@/lib/health-types";
 import { buildPatientTimeline } from "@/lib/health-records";
 import { buildPatientHealthReportHtml } from "@/lib/health-report";
@@ -21,12 +22,26 @@ const C = {
 };
 const id = (prefix: string) => `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
+function localDateString(date = new Date()) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function toLocalDateInput(value?: string) {
+  if (!value) return localDateString();
+  if (/^\\d{4}-\\d{2}-\\d{2}$/.test(value)) return value;
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? localDateString() : localDateString(parsed);
+}
+
 export default function HealthScreen() {
   const { activePatient, updateActiveHealthData } = useAllergy();
   const [mode, setMode] = useState<EntryMode>("condition");
   const [visible, setVisible] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [recordDate, setRecordDate] = useState(new Date().toISOString().slice(0, 10));
+  const [recordDate, setRecordDate] = useState(localDateString());
   const [name, setName] = useState("");
   const [value, setValue] = useState("");
   const [unit, setUnit] = useState("");
@@ -52,7 +67,7 @@ export default function HealthScreen() {
   };
 
   const open = (next: EntryMode) => {
-    setMode(next); setEditingId(null); setName(""); setValue(""); setUnit(""); setRange(""); setNotes(""); setRecordDate(new Date().toISOString().slice(0, 10)); setVisible(true);
+    setMode(next); setEditingId(null); setName(""); setValue(""); setUnit(""); setRange(""); setNotes(""); setRecordDate(localDateString()); setVisible(true);
   };
   const edit = (next: EntryMode, item: ChronicCondition | HealthMeasurement | LabResult) => {
     setMode(next); setEditingId(item.id); setName(next === "condition" ? (item as ChronicCondition).name : next === "measurement" ? (item as HealthMeasurement).type : (item as LabResult).testName);
@@ -61,7 +76,7 @@ export default function HealthScreen() {
     setRange(next === "condition" ? "" : ((item as HealthMeasurement | LabResult).referenceRange || ""));
     setNotes(item.notes || "");
     const date = next === "condition" ? (item as ChronicCondition).diagnosedAt : next === "measurement" ? (item as HealthMeasurement).measuredAt : (item as LabResult).resultedAt;
-    setRecordDate((date || new Date().toISOString()).slice(0, 10)); setVisible(true);
+    setRecordDate(toLocalDateInput(date)); setVisible(true);
   };
   const remove = (next: EntryMode, itemId: string) => {
     Alert.alert("تأكيد الحذف", "هل تريد حذف هذا السجل من ملف المريض؟", [
@@ -147,7 +162,7 @@ export default function HealthScreen() {
           {mode !== "condition" && <TextInput value={value} onChangeText={setValue} placeholder={mode === "measurement" ? "القيمة الرقمية" : "النتيجة"} placeholderTextColor={C.muted} style={styles.input} textAlign="right" />}
           {mode !== "condition" && <TextInput value={unit} onChangeText={setUnit} placeholder="الوحدة" placeholderTextColor={C.muted} style={styles.input} textAlign="right" />}
           {mode !== "condition" && <TextInput value={range} onChangeText={setRange} placeholder="المجال المرجعي كما في التقرير (اختياري)" placeholderTextColor={C.muted} style={styles.input} textAlign="right" />}
-          <TextInput value={recordDate} onChangeText={setRecordDate} placeholder="التاريخ (YYYY-MM-DD)" placeholderTextColor={C.muted} style={styles.input} textAlign="right" />
+          <DatePickerField label="تاريخ السجل" value={recordDate} onChange={setRecordDate} placeholder="اختر التاريخ" />
           <TextInput value={notes} onChangeText={setNotes} placeholder="ملاحظات (اختياري)" placeholderTextColor={C.muted} style={styles.input} textAlign="right" />
           <View style={styles.actions}><Pressable onPress={() => setVisible(false)} style={styles.cancel}><Text style={styles.cancelText}>إلغاء</Text></Pressable><Pressable onPress={save} style={styles.save}><Text style={styles.saveText}>{editingId ? "حفظ التعديل" : "حفظ"}</Text></Pressable></View>
         </View></View>
